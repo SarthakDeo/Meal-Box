@@ -94,7 +94,7 @@ def create_menu():
 @admin_required
 def update_menu(menu_id):
     """Update a menu entry"""
-    menu = DailyMenu.query.get_or_404(menu_id)
+    menu = db.get_or_404(DailyMenu, menu_id)
     data = request.get_json()
 
     if data.get('items') is not None:
@@ -110,7 +110,7 @@ def update_menu(menu_id):
 @admin_required
 def delete_menu(menu_id):
     """Delete a menu entry"""
-    menu = DailyMenu.query.get_or_404(menu_id)
+    menu = db.get_or_404(DailyMenu, menu_id)
     db.session.delete(menu)
     db.session.commit()
     return jsonify({"message": "Menu deleted"}), 200
@@ -128,7 +128,7 @@ def get_week_menu():
     menus = DailyMenu.query.filter(
         DailyMenu.menu_date >= start,
         DailyMenu.menu_date <= end,
-        DailyMenu.is_published == True
+        DailyMenu.is_published.is_(True)
     ).order_by(DailyMenu.menu_date, DailyMenu.meal_time).all()
 
     return jsonify({

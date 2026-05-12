@@ -55,7 +55,7 @@ def record_payment():
             return jsonify({"error": f"{field} is required"}), 400
 
     # Validate user exists
-    user = User.query.get(data['user_id'])
+    user = db.session.get(User, data['user_id'])
     if not user or user.role != 'customer':
         return jsonify({"error": "Invalid customer"}), 404
 
@@ -102,7 +102,7 @@ def get_balance(user_id):
     if current_user.role == 'customer' and current_user.id != user_id:
         return jsonify({"error": "Unauthorized"}), 403
 
-    user = User.query.get_or_404(user_id)
+    user = db.get_or_404(User, user_id)
     balance = user.get_balance()
 
     # Get totals breakdown

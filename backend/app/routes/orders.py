@@ -150,7 +150,7 @@ def create_order():
 @admin_required
 def update_order(order_id):
     """Update order status (admin)"""
-    order = Order.query.get_or_404(order_id)
+    order = db.get_or_404(Order, order_id)
     data = request.get_json()
 
     if data.get('status'):
@@ -175,7 +175,7 @@ def update_order(order_id):
 def cancel_order(order_id):
     """Cancel an order"""
     user = get_current_user()
-    order = Order.query.get_or_404(order_id)
+    order = db.get_or_404(Order, order_id)
 
     # Customers can only cancel their own orders
     if user.role == 'customer' and order.user_id != user.id:

@@ -53,7 +53,7 @@ def create_subscription():
             return jsonify({"error": f"{field} is required"}), 400
 
     # Validate user exists and is a customer
-    user = User.query.get(data['user_id'])
+    user = db.session.get(User, data['user_id'])
     if not user or user.role != 'customer':
         return jsonify({"error": "Invalid customer"}), 404
 
@@ -117,7 +117,7 @@ def create_subscription():
 @admin_required
 def update_subscription(sub_id):
     """Update subscription details"""
-    sub = Subscription.query.get_or_404(sub_id)
+    sub = db.get_or_404(Subscription, sub_id)
     data = request.get_json()
 
     if data.get('end_date'):
@@ -146,7 +146,7 @@ def update_subscription(sub_id):
 @admin_required
 def pause_subscription(sub_id):
     """Pause a subscription"""
-    sub = Subscription.query.get_or_404(sub_id)
+    sub = db.get_or_404(Subscription, sub_id)
 
     if sub.status != 'active':
         return jsonify({"error": "Only active subscriptions can be paused"}), 400
@@ -166,7 +166,7 @@ def pause_subscription(sub_id):
 @admin_required
 def resume_subscription(sub_id):
     """Resume a paused subscription"""
-    sub = Subscription.query.get_or_404(sub_id)
+    sub = db.get_or_404(Subscription, sub_id)
 
     if sub.status != 'paused':
         return jsonify({"error": "Only paused subscriptions can be resumed"}), 400
@@ -185,7 +185,7 @@ def resume_subscription(sub_id):
 @admin_required
 def mark_subscription_paid(sub_id):
     """Mark a subscription as paid and record payment"""
-    sub = Subscription.query.get_or_404(sub_id)
+    sub = db.get_or_404(Subscription, sub_id)
 
     if sub.is_paid:
         return jsonify({"error": "Subscription is already marked as paid"}), 400

@@ -109,7 +109,7 @@ def get_customer_stats():
         func.count(User.id).label('count')
     ).filter(
         User.role == 'customer',
-        User.is_active == True
+        User.is_active.is_(True)
     ).group_by(User.customer_type).all()
 
     return [{

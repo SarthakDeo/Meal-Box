@@ -42,7 +42,7 @@ def list_customers():
 @admin_required
 def get_customer(user_id):
     """Get customer details with order history"""
-    user = User.query.get_or_404(user_id)
+    user = db.get_or_404(User, user_id)
     if user.role != 'customer':
         return jsonify({"error": "Not a customer"}), 404
 
@@ -99,7 +99,7 @@ def create_customer():
 @admin_required
 def update_customer(user_id):
     """Edit customer details"""
-    user = User.query.get_or_404(user_id)
+    user = db.get_or_404(User, user_id)
     if user.role != 'customer':
         return jsonify({"error": "Not a customer"}), 404
 
@@ -127,7 +127,7 @@ def update_customer(user_id):
 @admin_required
 def deactivate_customer(user_id):
     """Deactivate a customer (soft delete)"""
-    user = User.query.get_or_404(user_id)
+    user = db.get_or_404(User, user_id)
     if user.role != 'customer':
         return jsonify({"error": "Not a customer"}), 404
 
