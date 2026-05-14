@@ -1,0 +1,32 @@
+# Byte-compiled
+__pycache__/
+*.py[cod]
+
+# Virtual env
+venv/
+.venv/
+env/
+
+# Environment
+.env
+mealbox.db
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Migrations
+migrations/versions/__pycache__/
+
+# Node
+node_modules/
+dist/
+build/
+.cache/
+
+# Logs
+*.log
