@@ -65,7 +65,7 @@ def create_app(config_class=Config):
             admin = User(
                 name='Admin',
                 email='admin@mealbox.com',
-                phone='0000000000',
+                phone='9156246585',
                 role='admin',
                 is_active=True
             )
