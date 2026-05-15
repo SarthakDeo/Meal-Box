@@ -6,7 +6,6 @@ from flask_cors import CORS
 from app.extensions import db, migrate, jwt, bcrypt
 from app.config import Config
 
-
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
@@ -17,15 +16,26 @@ def create_app(config_class=Config):
     jwt.init_app(app)
     bcrypt.init_app(app)
 
-    # CORS configuration
-    CORS(app, resources={
-    r"/api/*": {
-        "origins": app.config.get('CORS_ORIGINS', '*'),
-        "supports_credentials": True,
-        "allow_headers": ["Content-Type", "Authorization"],
-        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-    }
-    })
+    # ✅ Simple CORS fix — allows all origins temporarily
+    CORS(app, 
+         origins=["https://meal-box-bay.vercel.app", "http://localhost:5173"],
+         supports_credentials=True,
+         allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+         expose_headers=["Content-Type", "Authorization"]
+    )
+
+    # Handle OPTIONS preflight manually
+    @app.before_request
+    def handle_options():
+        from flask import request, jsonify
+        if request.method == "OPTIONS":
+            response = app.make_default_options_response()
+            response.headers["Access-Control-Allow-Origin"] = "https://meal-box-bay.vercel.app"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+            return response
 
     # Register blueprints
     from app.routes.auth import auth_bp
@@ -57,10 +67,8 @@ def create_app(config_class=Config):
     def missing_token_callback(error):
         return {"error": "Authorization required", "code": "authorization_required"}, 401
 
-    # Seed admin command
     @app.cli.command("seed-admin")
     def seed_admin():
-        """Create the pre-seeded admin user."""
         from app.models.user import User
         admin = User.query.filter_by(email='admin@mealbox.com').first()
         if not admin:
@@ -74,8 +82,8 @@ def create_app(config_class=Config):
             admin.set_password('admin123')
             db.session.add(admin)
             db.session.commit()
-            print("✅ Admin user created: admin@mealbox.com / admin123")
+            print("✅ Admin user created")
         else:
-            print("ℹ️  Admin user already exists.")
+            print("ℹ️  Admin already exists.")
 
     return app
