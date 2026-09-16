@@ -23,6 +23,13 @@ export default function CustomerDashboard() {
     loadDashboardData();
   }, []);
 
+  const getLocalDateString = (d = new Date()) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const loadDashboardData = async () => {
     try {
       const [menuRes, historyRes] = await Promise.all([
@@ -31,11 +38,23 @@ export default function CustomerDashboard() {
       ]);
       setMenu(menuRes.data.menus || []);
       
-      const todayStr = new Date().toISOString().split('T')[0];
-      const todayList = (historyRes.data.orders || []).filter(
-        o => o.order_date === todayStr && o.status !== 'cancelled'
-      );
+      const allOrders = historyRes.data.orders || [];
+      const localTodayStr = getLocalDateString();
+      const utcTodayStr = new Date().toISOString().split('T')[0];
+      const todayList = allOrders.filter(o => {
+        const orderDateStr = o.order_date ? o.order_date.slice(0, 10) : '';
+        return (orderDateStr === localTodayStr || orderDateStr === utcTodayStr) && o.status !== 'cancelled';
+      });
       setTodayOrders(todayList);
+
+      // Auto pre-fill last used address if not already set in state
+      if (!deliveryLocation) {
+        const lastOrderWithLoc = allOrders.find(o => o.delivery_location && o.delivery_location.trim());
+        if (lastOrderWithLoc) {
+          setDeliveryLocation(lastOrderWithLoc.delivery_location.trim());
+          localStorage.setItem('saved_delivery_location', lastOrderWithLoc.delivery_location.trim());
+        }
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -134,15 +153,26 @@ export default function CustomerDashboard() {
         boxShadow: '0 4px 12px rgba(0,0,0,0.04)',
         marginBottom: '20px'
       }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1rem', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '8px' }}>
-          <span>📍</span> Delivery Location / Address:
-        </label>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+            <span>📍</span> Delivery Location / Address:
+          </label>
+          {deliveryLocation && (
+            <span style={{ fontSize: '0.8rem', color: '#10B981', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              ✓ Saved (auto-filled)
+            </span>
+          )}
+        </div>
         <input
           type="text"
           className="form-input"
           placeholder="e.g. Hostel Block B - Room 204, or Flat 301, Sunshine Heights"
           value={deliveryLocation}
-          onChange={(e) => setDeliveryLocation(e.target.value)}
+          onChange={(e) => {
+            const newLoc = e.target.value;
+            setDeliveryLocation(newLoc);
+            localStorage.setItem('saved_delivery_location', newLoc);
+          }}
           style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', fontSize: '1rem' }}
         />
       </div>

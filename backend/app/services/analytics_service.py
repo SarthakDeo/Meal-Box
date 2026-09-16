@@ -8,11 +8,12 @@ from app.models.order import Order
 from app.models.payment import Payment
 from app.models.user import User
 from app.models.subscription import Subscription
+from app.utils.helpers import get_ist_today
 
 
 def get_revenue_summary(period='monthly', year=None, month=None):
     """Get revenue data for charts"""
-    today = date.today()
+    today = get_ist_today()
     if year is None:
         year = today.year
     if month is None:
@@ -120,7 +121,7 @@ def get_customer_stats():
 
 def get_today_summary():
     """Get today's delivery summary"""
-    today = date.today()
+    today = get_ist_today()
 
     orders = db.session.query(
         Order.meal_time,
@@ -154,7 +155,7 @@ def get_today_summary():
 
 def get_monthly_revenue():
     """Get current month's total revenue"""
-    today = date.today()
+    today = get_ist_today()
     first_day = today.replace(day=1)
 
     result = db.session.query(
