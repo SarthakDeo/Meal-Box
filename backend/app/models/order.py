@@ -15,29 +15,33 @@ class Order(db.Model):
     meal_time = db.Column(db.String(10), nullable=False)  # morning, dinner
     meal_type = db.Column(db.String(10), nullable=False)  # full, half
     extra_chapati = db.Column(db.Integer, default=0)
+    quantity = db.Column(db.Integer, default=1, nullable=False)
+    delivery_location = db.Column(db.String(255), nullable=True)
     amount = db.Column(db.Numeric(10, 2), nullable=False)
     status = db.Column(db.String(20), default='booked', nullable=False, index=True)  # booked, delivered, cancelled
     source = db.Column(db.String(10), default='manual', nullable=False)  # auto, manual
     created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
-    # Unique constraint: one active order per user per meal_time per day
+    # Index on user, date, meal_time
     __table_args__ = (
         db.Index('idx_orders_user_date', 'user_id', 'order_date', 'meal_time'),
     )
 
     def calculate_amount(self):
-        """Calculate order amount based on meal type and extras"""
+        """Calculate order amount: (quantity * base_meal_price) + (total_extra_chapati * extra_price)"""
         from flask import current_app
         if self.meal_type == 'full':
             base = current_app.config.get('FULL_MEAL_PRICE', 80.00)
         else:
             base = current_app.config.get('HALF_MEAL_PRICE', 60.00)
 
-        extra = self.extra_chapati * current_app.config.get('EXTRA_CHAPATI_PRICE', 10.00)
-        self.amount = base + extra
+        qty = self.quantity if self.quantity and self.quantity > 0 else 1
+        extra = (self.extra_chapati or 0) * current_app.config.get('EXTRA_CHAPATI_PRICE', 10.00)
+        self.amount = (qty * base) + extra
         return self.amount
 
     def to_dict(self):
+        qty = self.quantity if self.quantity and self.quantity > 0 else 1
         return {
             'id': self.id,
             'user_id': self.user_id,
@@ -46,7 +50,9 @@ class Order(db.Model):
             'order_date': self.order_date.isoformat(),
             'meal_time': self.meal_time,
             'meal_type': self.meal_type,
-            'extra_chapati': self.extra_chapati,
+            'quantity': qty,
+            'extra_chapati': self.extra_chapati or 0,
+            'delivery_location': self.delivery_location,
             'amount': float(self.amount),
             'status': self.status,
             'source': self.source,
@@ -54,4 +60,4 @@ class Order(db.Model):
         }
 
     def __repr__(self):
-        return f'<Order {self.id} - {self.order_date} {self.meal_time}>'
+        return f'<Order {self.id} - {self.order_date} {self.meal_time} (x{self.quantity})>'

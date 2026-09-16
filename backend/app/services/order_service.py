@@ -46,6 +46,7 @@ def generate_daily_orders(target_date=None):
                     meal_time=meal_time,
                     meal_type=sub.meal_type,
                     extra_chapati=0,
+                    quantity=1,
                     amount=amount,
                     source='auto',
                     status='booked'

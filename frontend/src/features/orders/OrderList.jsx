@@ -96,9 +96,11 @@ export default function OrderList() {
             <thead>
               <tr>
                 <th>Customer</th>
+                <th>Location</th>
                 <th>Meal</th>
+                <th>Qty</th>
                 <th>Type</th>
-                <th>Extra</th>
+                <th>Extra Chapati</th>
                 <th>Amount</th>
                 <th>Source</th>
                 <th>Status</th>
@@ -109,9 +111,11 @@ export default function OrderList() {
               {orders.map(order => (
                 <tr key={order.id}>
                   <td><strong>{order.user_name}</strong></td>
+                  <td><span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>📍 {order.delivery_location || '—'}</span></td>
                   <td>{order.meal_time === 'morning' ? '🌅 Morning' : '🌙 Dinner'}</td>
+                  <td><strong>{order.quantity || 1}</strong></td>
                   <td><span className={`badge badge--${order.meal_type}`}>{order.meal_type}</span></td>
-                  <td>{order.extra_chapati > 0 ? `+${order.extra_chapati}` : '—'}</td>
+                  <td>{order.extra_chapati > 0 ? `+${order.extra_chapati} total` : '—'}</td>
                   <td><strong>₹{order.amount}</strong></td>
                   <td><span className={`badge badge--${order.source}`}>{order.source}</span></td>
                   <td><span className={`badge badge--${order.status}`}>{order.status}</span></td>

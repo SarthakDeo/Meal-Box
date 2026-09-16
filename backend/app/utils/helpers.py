@@ -30,11 +30,12 @@ def can_book_order(meal_time: str) -> bool:
     return now < cutoff
 
 
-def get_meal_price(meal_type: str, extra_chapati: int = 0) -> float:
-    """Calculate meal price"""
+def get_meal_price(meal_type: str, extra_chapati: int = 0, quantity: int = 1) -> float:
+    """Calculate meal price: (quantity * base_meal_price) + (total_extra_chapati * 10)"""
     base = 80.00 if meal_type == 'full' else 60.00
-    extra = extra_chapati * 10.00
-    return base + extra
+    extra = max(0, int(extra_chapati)) * 10.00
+    qty = max(1, int(quantity))
+    return (qty * base) + extra
 
 
 def format_currency(amount):

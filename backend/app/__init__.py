@@ -16,9 +16,9 @@ def create_app(config_class=Config):
     jwt.init_app(app)
     bcrypt.init_app(app)
 
-    # ✅ Simple CORS fix — allows all origins temporarily
+    # ✅ CORS configuration allowing local dev and production
     CORS(app, 
-         origins=["https://meal-box-bay.vercel.app", "http://localhost:5173"],
+         origins=["https://meal-box-bay.vercel.app", "http://localhost:5173", "http://127.0.0.1:5173"],
          supports_credentials=True,
          allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
          methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
@@ -28,12 +28,13 @@ def create_app(config_class=Config):
     # Handle OPTIONS preflight manually
     @app.before_request
     def handle_options():
-        from flask import request, jsonify
+        from flask import request
         if request.method == "OPTIONS":
             response = app.make_default_options_response()
-            response.headers["Access-Control-Allow-Origin"] = "https://meal-box-bay.vercel.app"
-            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+            origin = request.headers.get("Origin", "*")
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With"
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
             response.headers["Access-Control-Allow-Credentials"] = "true"
             return response
 

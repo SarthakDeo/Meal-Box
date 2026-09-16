@@ -116,18 +116,10 @@ def create_order():
             except ValueError:
                 return jsonify({"error": "Invalid date format"}), 400
 
-    # Check for duplicate
-    existing = Order.query.filter_by(
-        user_id=target_user_id,
-        order_date=order_date,
-        meal_time=meal_time
-    ).filter(Order.status != 'cancelled').first()
-
-    if existing:
-        return jsonify({"error": "Order already exists for this meal"}), 409
-
     extra_chapati = int(data.get('extra_chapati', 0))
-    amount = get_meal_price(meal_type, extra_chapati)
+    quantity = max(1, int(data.get('quantity', 1)))
+    delivery_location = data.get('delivery_location', '').strip() if data.get('delivery_location') else None
+    amount = get_meal_price(meal_type, extra_chapati, quantity)
 
     order = Order(
         user_id=target_user_id,
@@ -135,6 +127,8 @@ def create_order():
         meal_time=meal_time,
         meal_type=meal_type,
         extra_chapati=extra_chapati,
+        quantity=quantity,
+        delivery_location=delivery_location,
         amount=amount,
         source='manual',
         status='booked'
@@ -149,7 +143,7 @@ def create_order():
 @orders_bp.route('/<int:order_id>', methods=['PUT'])
 @admin_required
 def update_order(order_id):
-    """Update order status (admin)"""
+    """Update order status and details (admin)"""
     order = db.get_or_404(Order, order_id)
     data = request.get_json()
 
@@ -158,6 +152,10 @@ def update_order(order_id):
             return jsonify({"error": "Invalid status"}), 400
         order.status = data['status']
 
+    if data.get('quantity') is not None:
+        order.quantity = max(1, int(data['quantity']))
+        order.calculate_amount()
+
     if data.get('extra_chapati') is not None:
         order.extra_chapati = int(data['extra_chapati'])
         order.calculate_amount()
@@ -165,6 +163,9 @@ def update_order(order_id):
     if data.get('meal_type'):
         order.meal_type = data['meal_type']
         order.calculate_amount()
+
+    if data.get('delivery_location') is not None:
+        order.delivery_location = data['delivery_location'].strip()
 
     db.session.commit()
     return jsonify({"message": "Order updated", "order": order.to_dict()}), 200

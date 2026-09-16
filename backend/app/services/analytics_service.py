@@ -23,7 +23,7 @@ def get_revenue_summary(period='monthly', year=None, month=None):
         results = db.session.query(
             Order.order_date,
             func.sum(Order.amount).label('revenue'),
-            func.count(Order.id).label('order_count')
+            func.sum(Order.quantity).label('order_count')
         ).filter(
             extract('year', Order.order_date) == year,
             extract('month', Order.order_date) == month,
@@ -33,7 +33,7 @@ def get_revenue_summary(period='monthly', year=None, month=None):
         return [{
             'date': r.order_date.isoformat(),
             'revenue': float(r.revenue),
-            'orders': r.order_count
+            'orders': int(r.order_count or 0)
         } for r in results]
 
     elif period == 'monthly':
@@ -41,7 +41,7 @@ def get_revenue_summary(period='monthly', year=None, month=None):
         results = db.session.query(
             extract('month', Order.order_date).label('month'),
             func.sum(Order.amount).label('revenue'),
-            func.count(Order.id).label('order_count')
+            func.sum(Order.quantity).label('order_count')
         ).filter(
             extract('year', Order.order_date) == year,
             Order.status != 'cancelled'
@@ -53,7 +53,7 @@ def get_revenue_summary(period='monthly', year=None, month=None):
             'month': month_names[int(r.month)],
             'month_num': int(r.month),
             'revenue': float(r.revenue),
-            'orders': r.order_count
+            'orders': int(r.order_count or 0)
         } for r in results]
 
 
@@ -61,7 +61,7 @@ def get_order_distribution(start_date=None, end_date=None):
     """Get order distribution by meal type"""
     query = db.session.query(
         Order.meal_type,
-        func.count(Order.id).label('count'),
+        func.sum(Order.quantity).label('count'),
         func.sum(Order.amount).label('revenue')
     ).filter(Order.status != 'cancelled')
 
@@ -89,14 +89,14 @@ def get_order_distribution(start_date=None, end_date=None):
 
     distribution = [{
         'type': r.meal_type,
-        'count': r.count,
-        'revenue': float(r.revenue)
+        'count': int(r.count or 0),
+        'revenue': float(r.revenue or 0)
     } for r in results]
 
     distribution.append({
         'type': 'extra_chapati',
-        'count': int(extras.total_extras or 0),
-        'revenue': float(extras.extra_revenue or 0)
+        'count': int(extras.total_extras or 0) if extras else 0,
+        'revenue': float(extras.extra_revenue or 0) if extras else 0
     })
 
     return distribution
@@ -125,7 +125,7 @@ def get_today_summary():
     orders = db.session.query(
         Order.meal_time,
         Order.meal_type,
-        func.count(Order.id).label('count'),
+        func.sum(Order.quantity).label('count'),
         func.sum(Order.amount).label('revenue'),
         func.sum(Order.extra_chapati).label('extras')
     ).filter(
@@ -143,10 +143,10 @@ def get_today_summary():
 
     for o in orders:
         meal = summary[o.meal_time]
-        meal[o.meal_type] = o.count
+        meal[o.meal_type] = int(o.count or 0)
         meal['extras'] += int(o.extras or 0)
         meal['revenue'] += float(o.revenue or 0)
-        summary['total_orders'] += o.count
+        summary['total_orders'] += int(o.count or 0)
         summary['total_revenue'] += float(o.revenue or 0)
 
     return summary
