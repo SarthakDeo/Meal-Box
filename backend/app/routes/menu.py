@@ -18,10 +18,12 @@ def get_today_menu():
     """Get today's menu"""
     today = get_ist_today()
     menus = DailyMenu.query.filter_by(menu_date=today, is_published=True).all()
-    return jsonify({
+    response = jsonify({
         "date": today.isoformat(),
         "menus": [m.to_dict() for m in menus]
-    }), 200
+    })
+    response.headers['Cache-Control'] = 'private, max-age=60'
+    return response, 200
 
 
 @menu_bp.route('', methods=['GET'])
