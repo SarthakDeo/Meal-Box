@@ -55,6 +55,12 @@ def create_app(config_class=Config):
     app.register_blueprint(payments_bp, url_prefix='/api/payments')
     app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
 
+    # Health Check endpoints for keep-alive pings (Cron-Job / UptimeRobot / Render)
+    @app.route('/', methods=['GET'])
+    @app.route('/api/health', methods=['GET'])
+    def health_check():
+        return {"status": "ok", "message": "Meal Box Backend Service active"}, 200
+
     # JWT error handlers
     @jwt.expired_token_loader
     def expired_token_callback(jwt_header, jwt_payload):
