@@ -67,6 +67,20 @@
   margin-top: 2px;
 }
 
+.ordered-today-badge {
+  background-color: #F97316 !important;
+  color: #FFFFFF !important;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.35);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
 .menu-card__items {
   list-style: none;
   padding: 0;

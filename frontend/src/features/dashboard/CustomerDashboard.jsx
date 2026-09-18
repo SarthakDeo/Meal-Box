@@ -75,18 +75,13 @@ export default function CustomerDashboard() {
     }
 
     const existingCount = getOrderedCount(mealTime);
-    if (existingCount > 0) {
-      // Show confirmation popup modal
-      setConfirmModal({
-        mealTime,
-        mealType,
-        quantity,
-        extraChapati,
-        existingCount
-      });
-    } else {
-      executeBooking(mealTime, mealType, quantity, extraChapati);
-    }
+    setConfirmModal({
+      mealTime,
+      mealType,
+      quantity,
+      extraChapati,
+      existingCount
+    });
   };
 
   const executeBooking = async (mealTime, mealType, quantity, extraChapati) => {
@@ -190,16 +185,8 @@ export default function CustomerDashboard() {
                 <p className="menu-card__cutoff">Order before 10:30 AM</p>
               </div>
               {morningOrderedCount > 0 && (
-                <span style={{
-                  backgroundColor: 'var(--primary-color)',
-                  color: '#fff',
-                  padding: '4px 10px',
-                  borderRadius: '20px',
-                  fontSize: '0.85rem',
-                  fontWeight: 'bold',
-                  boxShadow: '0 2px 6px rgba(249, 115, 22, 0.3)'
-                }}>
-                  Ordered Today: {morningOrderedCount}
+                <span className="ordered-today-badge">
+                  Today's Orders: {morningOrderedCount}
                 </span>
               )}
             </div>
@@ -234,12 +221,47 @@ export default function CustomerDashboard() {
                       style={{ padding: '4px 14px', borderRadius: '6px', border: '2px solid var(--primary-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', cursor: 'pointer', fontSize: '1.2rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                    <Button size="sm" onClick={() => handleBookClick('morning', 'full', quantityMorning, extraChapatiMorning)} loading={booking} style={{ flex: 1 }}>
-                      Full ₹{calcTotal('full', quantityMorning, extraChapatiMorning)} ({quantityMorning} tiffins)
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                    <Button 
+                      size="lg" 
+                      onClick={() => handleBookClick('morning', 'full', quantityMorning, extraChapatiMorning)} 
+                      loading={booking} 
+                      style={{ 
+                        flex: 1, 
+                        padding: '14px 16px', 
+                        fontSize: '1.05rem', 
+                        fontWeight: '800',
+                        borderRadius: '12px',
+                        boxShadow: '0 4px 14px rgba(249, 115, 22, 0.35)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      🍱 Full ₹{calcTotal('full', quantityMorning, extraChapatiMorning)} ({quantityMorning} tiffin{quantityMorning > 1 ? 's' : ''})
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleBookClick('morning', 'half', quantityMorning, extraChapatiMorning)} loading={booking} style={{ flex: 1 }}>
-                      Half ₹{calcTotal('half', quantityMorning, extraChapatiMorning)} ({quantityMorning} tiffins)
+                    <Button 
+                      size="lg" 
+                      variant="outline" 
+                      onClick={() => handleBookClick('morning', 'half', quantityMorning, extraChapatiMorning)} 
+                      loading={booking} 
+                      style={{ 
+                        flex: 1, 
+                        padding: '14px 16px', 
+                        fontSize: '1.05rem', 
+                        fontWeight: '800',
+                        borderRadius: '12px',
+                        borderWidth: '2px',
+                        borderColor: '#F97316',
+                        color: 'var(--text-primary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      🥗 Half ₹{calcTotal('half', quantityMorning, extraChapatiMorning)} ({quantityMorning} tiffin{quantityMorning > 1 ? 's' : ''})
                     </Button>
                   </div>
                 </div>
@@ -258,16 +280,8 @@ export default function CustomerDashboard() {
                 <p className="menu-card__cutoff">Order before 7:30 PM</p>
               </div>
               {dinnerOrderedCount > 0 && (
-                <span style={{
-                  backgroundColor: 'var(--primary-color)',
-                  color: '#fff',
-                  padding: '4px 10px',
-                  borderRadius: '20px',
-                  fontSize: '0.85rem',
-                  fontWeight: 'bold',
-                  boxShadow: '0 2px 6px rgba(249, 115, 22, 0.3)'
-                }}>
-                  Ordered Today: {dinnerOrderedCount}
+                <span className="ordered-today-badge">
+                  Today's Orders: {dinnerOrderedCount}
                 </span>
               )}
             </div>
@@ -302,12 +316,47 @@ export default function CustomerDashboard() {
                       style={{ padding: '4px 14px', borderRadius: '6px', border: '2px solid var(--primary-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', cursor: 'pointer', fontSize: '1.2rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                    <Button size="sm" onClick={() => handleBookClick('dinner', 'full', quantityDinner, extraChapatiDinner)} loading={booking} style={{ flex: 1 }}>
-                      Full ₹{calcTotal('full', quantityDinner, extraChapatiDinner)} ({quantityDinner} tiffins)
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                    <Button 
+                      size="lg" 
+                      onClick={() => handleBookClick('dinner', 'full', quantityDinner, extraChapatiDinner)} 
+                      loading={booking} 
+                      style={{ 
+                        flex: 1, 
+                        padding: '14px 16px', 
+                        fontSize: '1.05rem', 
+                        fontWeight: '800',
+                        borderRadius: '12px',
+                        boxShadow: '0 4px 14px rgba(249, 115, 22, 0.35)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      🍱 Full ₹{calcTotal('full', quantityDinner, extraChapatiDinner)} ({quantityDinner} tiffin{quantityDinner > 1 ? 's' : ''})
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleBookClick('dinner', 'half', quantityDinner, extraChapatiDinner)} loading={booking} style={{ flex: 1 }}>
-                      Half ₹{calcTotal('half', quantityDinner, extraChapatiDinner)} ({quantityDinner} tiffins)
+                    <Button 
+                      size="lg" 
+                      variant="outline" 
+                      onClick={() => handleBookClick('dinner', 'half', quantityDinner, extraChapatiDinner)} 
+                      loading={booking} 
+                      style={{ 
+                        flex: 1, 
+                        padding: '14px 16px', 
+                        fontSize: '1.05rem', 
+                        fontWeight: '800',
+                        borderRadius: '12px',
+                        borderWidth: '2px',
+                        borderColor: '#F97316',
+                        color: 'var(--text-primary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      🥗 Half ₹{calcTotal('half', quantityDinner, extraChapatiDinner)} ({quantityDinner} tiffin{quantityDinner > 1 ? 's' : ''})
                     </Button>
                   </div>
                 </div>
@@ -327,8 +376,8 @@ export default function CustomerDashboard() {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.6)',
-          backdropFilter: 'blur(4px)',
+          backgroundColor: 'rgba(0, 0, 0, 0.65)',
+          backdropFilter: 'blur(6px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -337,27 +386,137 @@ export default function CustomerDashboard() {
         }}>
           <div className="animate-scale-in" style={{
             background: 'var(--bg-card)',
-            padding: '24px 28px',
-            borderRadius: '20px',
-            maxWidth: '440px',
+            padding: '28px 30px',
+            borderRadius: '24px',
+            maxWidth: '460px',
             width: '100%',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
-            border: '1px solid var(--border-light)'
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.35)',
+            border: '1.5px solid var(--border-light)'
           }}>
-            <h3 style={{ fontSize: '1.3rem', fontWeight: 'bold', color: 'var(--primary-color)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>⚠️</span> Additional Order Confirmation
-            </h3>
-            <p style={{ fontSize: '1rem', color: 'var(--text-primary)', lineHeight: 1.5, marginBottom: '20px' }}>
-              You have already ordered <strong>{confirmModal.existingCount}</strong> {confirmModal.mealTime} tiffin(s) today.
-              <br /><br />
-              Do you want to order <strong>{confirmModal.quantity} more</strong> {confirmModal.mealTime} tiffin(s)?
-            </p>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-              <Button variant="outline" onClick={() => setConfirmModal(null)}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '18px' }}>
+              <div style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '50%',
+                background: 'rgba(249, 115, 22, 0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.6rem',
+                flexShrink: 0
+              }}>
+                🛒
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1.35rem', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>
+                  Confirm Your Order
+                </h3>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>
+                  Please review your booking details below
+                </p>
+              </div>
+            </div>
+
+            <div style={{
+              background: 'var(--bg-tertiary)',
+              padding: '16px 20px',
+              borderRadius: '16px',
+              border: '1px solid var(--border-light)',
+              marginBottom: '20px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.95rem' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Meal Time:</span>
+                <strong style={{ color: 'var(--text-primary)', textTransform: 'capitalize' }}>
+                  {confirmModal.mealTime === 'morning' ? '🌅 Morning Tiffin' : '🌙 Dinner Tiffin'}
+                </strong>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.95rem' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Tiffin Size:</span>
+                <strong style={{ color: 'var(--text-primary)', textTransform: 'capitalize' }}>
+                  {confirmModal.mealType === 'full' ? '🍱 Full Tiffin' : '🥗 Half Tiffin'}
+                </strong>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.95rem' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Quantity:</span>
+                <strong style={{ color: 'var(--text-primary)' }}>{confirmModal.quantity} Tiffin(s)</strong>
+              </div>
+
+              {confirmModal.extraChapati > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.95rem' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Extra Chapatis:</span>
+                  <strong style={{ color: '#F97316' }}>+{confirmModal.extraChapati} Chapati(s)</strong>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.95rem' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Delivery Location:</span>
+                <strong style={{ color: 'var(--text-primary)', textAlign: 'right', maxWidth: '60%', wordBreak: 'break-word' }}>
+                  📍 {deliveryLocation}
+                </strong>
+              </div>
+
+              <div style={{
+                borderTop: '1px dashed var(--border-medium)',
+                paddingTop: '10px',
+                marginTop: '4px',
+                display: 'flex',
+                justify: 'space-between',
+                alignItems: 'center',
+                fontSize: '1.15rem'
+              }}>
+                <span style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>Total Amount:</span>
+                <strong style={{ fontSize: '1.35rem', color: '#F97316', fontWeight: '900' }}>
+                  ₹{calcTotal(confirmModal.mealType, confirmModal.quantity, confirmModal.extraChapati)}
+                </strong>
+              </div>
+            </div>
+
+            {confirmModal.existingCount > 0 && (
+              <div style={{
+                padding: '10px 14px',
+                borderRadius: '10px',
+                backgroundColor: 'rgba(234, 179, 8, 0.12)',
+                border: '1px solid rgba(234, 179, 8, 0.4)',
+                fontSize: '0.85rem',
+                color: 'var(--text-primary)',
+                marginBottom: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <span>ℹ️</span>
+                <span>You already ordered <strong>{confirmModal.existingCount}</strong> {confirmModal.mealTime} tiffin(s) today. This will add to your order.</span>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <Button 
+                variant="outline" 
+                onClick={() => setConfirmModal(null)}
+                style={{ flex: 1, padding: '12px', fontSize: '1rem', borderRadius: '12px' }}
+              >
                 Cancel
               </Button>
-              <Button onClick={() => executeBooking(confirmModal.mealTime, confirmModal.mealType, confirmModal.quantity, confirmModal.extraChapati)}>
-                Yes, Order {confirmModal.quantity} More
+              <Button 
+                onClick={() => executeBooking(confirmModal.mealTime, confirmModal.mealType, confirmModal.quantity, confirmModal.extraChapati)}
+                loading={booking}
+                style={{ 
+                  flex: 1.4, 
+                  padding: '12px', 
+                  fontSize: '1rem',
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #F97316 0%, #EA580C 100%)',
+                  color: '#FFFFFF',
+                  fontWeight: 'bold',
+                  boxShadow: '0 4px 14px rgba(249, 115, 22, 0.35)'
+                }}
+              >
+                Confirm & Book Order
               </Button>
             </div>
           </div>
