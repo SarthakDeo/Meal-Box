@@ -18,6 +18,9 @@ export default function CustomerDashboard() {
   const [extraChapatiDinner, setExtraChapatiDinner] = useState(0);
   const [deliveryLocation, setDeliveryLocation] = useState(() => localStorage.getItem('saved_delivery_location') || '');
   const [confirmModal, setConfirmModal] = useState(null);
+  const [activeSub, setActiveSub] = useState(null);
+  const [cancelingMeal, setCancelingMeal] = useState(null);
+  const [confirmCancelModal, setConfirmCancelModal] = useState(null);
 
   useEffect(() => {
     loadDashboardData();
@@ -32,9 +35,10 @@ export default function CustomerDashboard() {
 
   const loadDashboardData = async () => {
     try {
-      const [menuRes, historyRes] = await Promise.all([
+      const [menuRes, historyRes, subRes] = await Promise.all([
         api.get('/menu/today'),
-        api.get('/orders/history?per_page=50')
+        api.get('/orders/history?per_page=50'),
+        api.get('/subscriptions/me').catch(() => ({ data: { subscriptions: [] } }))
       ]);
       setMenu(menuRes.data.menus || []);
       
@@ -46,6 +50,10 @@ export default function CustomerDashboard() {
         return (orderDateStr === localTodayStr || orderDateStr === utcTodayStr) && o.status !== 'cancelled';
       });
       setTodayOrders(todayList);
+
+      const subs = subRes.data?.subscriptions || [];
+      const active = subs.find(s => s.status === 'active');
+      setActiveSub(active || null);
 
       // Auto pre-fill last used address if not already set in state
       if (!deliveryLocation) {
@@ -59,6 +67,20 @@ export default function CustomerDashboard() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCancelTodayMeal = async (mealTime) => {
+    setCancelingMeal(mealTime);
+    try {
+      await api.post('/orders/cancel-today', { meal_time: mealTime });
+      toast.success(`${mealTime === 'morning' ? 'Morning' : 'Dinner'} meal cancelled for today!`);
+      setConfirmCancelModal(null);
+      loadDashboardData();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to cancel today\'s meal');
+    } finally {
+      setCancelingMeal(null);
     }
   };
 
@@ -264,6 +286,33 @@ export default function CustomerDashboard() {
                       🥗 Half ₹{calcTotal('half', quantityMorning, extraChapatiMorning)} ({quantityMorning} tiffin{quantityMorning > 1 ? 's' : ''})
                     </Button>
                   </div>
+
+                  {(morningOrderedCount > 0 || (activeSub && (activeSub.meal_time === 'morning' || activeSub.meal_time === 'both'))) && (
+                    <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px dashed var(--border-light)' }}>
+                      <button 
+                        onClick={() => setConfirmCancelModal({ mealTime: 'morning' })}
+                        disabled={cancelingMeal === 'morning'}
+                        style={{
+                          width: '100%',
+                          padding: '10px 14px',
+                          borderRadius: '10px',
+                          border: '1.5px solid var(--error-500)',
+                          background: 'rgba(239, 68, 68, 0.08)',
+                          color: 'var(--error-500)',
+                          fontWeight: 'bold',
+                          fontSize: '0.95rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        🚫 Cancel Today's Morning Meal
+                      </button>
+                    </div>
+                  )}
                 </div>
               </>
             ) : (
@@ -359,11 +408,81 @@ export default function CustomerDashboard() {
                       🥗 Half ₹{calcTotal('half', quantityDinner, extraChapatiDinner)} ({quantityDinner} tiffin{quantityDinner > 1 ? 's' : ''})
                     </Button>
                   </div>
+
+                  {(dinnerOrderedCount > 0 || (activeSub && (activeSub.meal_time === 'dinner' || activeSub.meal_time === 'both'))) && (
+                    <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px dashed var(--border-light)' }}>
+                      <button 
+                        onClick={() => setConfirmCancelModal({ mealTime: 'dinner' })}
+                        disabled={cancelingMeal === 'dinner'}
+                        style={{
+                          width: '100%',
+                          padding: '10px 14px',
+                          borderRadius: '10px',
+                          border: '1.5px solid var(--error-500)',
+                          background: 'rgba(239, 68, 68, 0.08)',
+                          color: 'var(--error-500)',
+                          fontWeight: 'bold',
+                          fontSize: '0.95rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        🚫 Cancel Today's Dinner Meal
+                      </button>
+                    </div>
+                  )}
                 </div>
               </>
             ) : (
               <p className="menu-card__empty">Menu not published yet</p>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Today's Meal Modal */}
+      {confirmCancelModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.65)',
+          backdropFilter: 'blur(6px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 9999, padding: '20px'
+        }}>
+          <div className="animate-scale-in" style={{
+            background: 'var(--bg-card)',
+            padding: '28px 30px',
+            borderRadius: '24px',
+            maxWidth: '440px',
+            width: '100%',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.35)',
+            border: '1.5px solid var(--border-light)'
+          }}>
+            <h3 style={{ fontSize: '1.3rem', fontWeight: 'bold', color: 'var(--error-500)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>⚠️</span> Cancel Today's Meal
+            </h3>
+            <p style={{ fontSize: '0.95rem', color: 'var(--text-primary)', lineHeight: 1.5, marginBottom: '20px' }}>
+              Are you sure you want to cancel your <strong>{confirmCancelModal.mealTime === 'morning' ? '🌅 Morning' : '🌙 Dinner'}</strong> meal for today?
+              <br /><br />
+              This will cancel your booking/subscription meal for today and update your account summary.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <Button variant="outline" onClick={() => setConfirmCancelModal(null)} style={{ flex: 1, borderRadius: '12px' }}>
+                No, Keep Meal
+              </Button>
+              <Button 
+                onClick={() => handleCancelTodayMeal(confirmCancelModal.mealTime)} 
+                loading={cancelingMeal === confirmCancelModal.mealTime}
+                style={{ flex: 1.2, background: 'var(--error-500)', color: '#fff', fontWeight: 'bold', borderRadius: '12px' }}
+              >
+                Yes, Cancel Meal
+              </Button>
+            </div>
           </div>
         </div>
       )}

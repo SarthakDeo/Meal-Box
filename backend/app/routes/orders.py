@@ -7,6 +7,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.extensions import db
 from app.models.order import Order
 from app.models.user import User
+from app.models.subscription import Subscription
 from app.utils.decorators import admin_required, get_current_user
 from app.utils.helpers import can_book_order, get_meal_price, get_ist_today
 from app.services.order_service import generate_daily_orders
@@ -188,6 +189,60 @@ def cancel_order(order_id):
     order.status = 'cancelled'
     db.session.commit()
     return jsonify({"message": "Order cancelled"}), 200
+
+
+@orders_bp.route('/cancel-today', methods=['POST'])
+@jwt_required()
+def cancel_today_meal():
+    """Cancel today's order or subscription meal for current user"""
+    user = get_current_user()
+    data = request.get_json() or {}
+    meal_time = data.get('meal_time')
+    if meal_time not in ('morning', 'dinner'):
+        return jsonify({"error": "meal_time must be 'morning' or 'dinner'"}), 400
+
+    today = get_ist_today()
+
+    # Find existing order for today
+    existing_orders = Order.query.filter_by(
+        user_id=user.id,
+        order_date=today,
+        meal_time=meal_time
+    ).filter(Order.status != 'cancelled').all()
+
+    if existing_orders:
+        for ord in existing_orders:
+            if ord.status == 'delivered':
+                return jsonify({"error": "Cannot cancel a delivered meal"}), 400
+            ord.status = 'cancelled'
+        db.session.commit()
+        return jsonify({"message": f"{meal_time.capitalize()} meal cancelled for today"}), 200
+
+    # Check if user has an active subscription covering today
+    sub = Subscription.query.filter_by(user_id=user.id, status='active').filter(
+        Subscription.start_date <= today,
+        Subscription.end_date >= today
+    ).first()
+
+    if sub and (sub.meal_time == meal_time or sub.meal_time == 'both'):
+        # Create a cancelled order entry so daily order generator skips it
+        cancelled_order = Order(
+            user_id=user.id,
+            subscription_id=sub.id,
+            order_date=today,
+            meal_time=meal_time,
+            meal_type=sub.meal_type,
+            quantity=1,
+            extra_chapati=0,
+            amount=0.0,
+            source='auto',
+            status='cancelled'
+        )
+        db.session.add(cancelled_order)
+        db.session.commit()
+        return jsonify({"message": f"Subscription {meal_time} meal cancelled for today"}), 200
+
+    return jsonify({"error": "No active order or subscription meal found to cancel for today"}), 404
 
 
 @orders_bp.route('/history', methods=['GET'])
