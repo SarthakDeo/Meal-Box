@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
-import Button from '../../components/common/Button';
+import Button from '../../components/ui/Button';
 import toast from 'react-hot-toast';
 import '../dashboard/Dashboard.css';
 
