@@ -57,6 +57,7 @@ export default function CustomerOrders() {
                 <th>Date</th>
                 <th>Meal</th>
                 <th>Location</th>
+                <th>Note</th>
                 <th>Qty</th>
                 <th>Type</th>
                 <th>Extra Chapati</th>
@@ -71,6 +72,15 @@ export default function CustomerOrders() {
                   <td>{new Date(o.order_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</td>
                   <td>{o.meal_time === 'morning' ? '🌅' : '🌙'} {o.meal_time}</td>
                   <td><span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>📍 {o.delivery_location || '—'}</span></td>
+                  <td>
+                    {o.note ? (
+                      <span style={{ fontSize: '0.85rem', color: '#F97316', fontWeight: '600' }}>
+                        📝 {o.note}
+                      </span>
+                    ) : (
+                      <span style={{ color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>—</span>
+                    )}
+                  </td>
                   <td><strong>{o.quantity || 1}</strong></td>
                   <td><span className={`badge badge--${o.meal_type}`}>{o.meal_type}</span></td>
                   <td>{o.extra_chapati > 0 ? `+${o.extra_chapati} total` : '—'}</td>

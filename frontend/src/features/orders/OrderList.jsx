@@ -97,6 +97,7 @@ export default function OrderList() {
               <tr>
                 <th>Customer</th>
                 <th>Location</th>
+                <th>Kitchen Note</th>
                 <th>Meal</th>
                 <th>Qty</th>
                 <th>Type</th>
@@ -112,6 +113,15 @@ export default function OrderList() {
                 <tr key={order.id}>
                   <td><strong>{order.user_name}</strong></td>
                   <td><span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>📍 {order.delivery_location || '—'}</span></td>
+                  <td>
+                    {order.note ? (
+                      <span style={{ fontSize: '0.88rem', color: '#F97316', fontWeight: '700', backgroundColor: 'rgba(249, 115, 22, 0.1)', padding: '4px 8px', borderRadius: '6px', display: 'inline-block' }}>
+                        📝 {order.note}
+                      </span>
+                    ) : (
+                      <span style={{ color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>—</span>
+                    )}
+                  </td>
                   <td>{order.meal_time === 'morning' ? '🌅 Morning' : '🌙 Dinner'}</td>
                   <td><strong>{order.quantity || 1}</strong></td>
                   <td><span className={`badge badge--${order.meal_type}`}>{order.meal_type}</span></td>

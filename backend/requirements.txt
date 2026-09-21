@@ -9,3 +9,4 @@ python-dotenv==1.1.0
 pytz==2025.2
 gunicorn==23.0.0
 APScheduler==3.11.0
+flask-compress==1.17

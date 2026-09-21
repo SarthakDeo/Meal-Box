@@ -16,6 +16,8 @@ export default function CustomerDashboard() {
   const [quantityDinner, setQuantityDinner] = useState(1);
   const [extraChapatiMorning, setExtraChapatiMorning] = useState(0);
   const [extraChapatiDinner, setExtraChapatiDinner] = useState(0);
+  const [noteMorning, setNoteMorning] = useState('');
+  const [noteDinner, setNoteDinner] = useState('');
   const [deliveryLocation, setDeliveryLocation] = useState(() => localStorage.getItem('saved_delivery_location') || '');
   const [confirmModal, setConfirmModal] = useState(null);
   const [activeSub, setActiveSub] = useState(null);
@@ -90,7 +92,7 @@ export default function CustomerDashboard() {
       .reduce((sum, o) => sum + (o.quantity || 1), 0);
   };
 
-  const handleBookClick = (mealTime, mealType, quantity, extraChapati) => {
+  const handleBookClick = (mealTime, mealType, quantity, extraChapati, note) => {
     if (!deliveryLocation.trim()) {
       toast.error('Please enter your delivery location before ordering!');
       return;
@@ -102,11 +104,12 @@ export default function CustomerDashboard() {
       mealType,
       quantity,
       extraChapati,
+      note,
       existingCount
     });
   };
 
-  const executeBooking = async (mealTime, mealType, quantity, extraChapati) => {
+  const executeBooking = async (mealTime, mealType, quantity, extraChapati, note) => {
     setBooking(true);
     setConfirmModal(null);
     try {
@@ -116,7 +119,8 @@ export default function CustomerDashboard() {
         meal_type: mealType,
         quantity: quantity,
         extra_chapati: extraChapati,
-        delivery_location: deliveryLocation.trim()
+        delivery_location: deliveryLocation.trim(),
+        note: note ? note.trim() : ''
       });
       const chapatiText = extraChapati > 0 ? ` with ${extraChapati} total extra chapati(s)` : '';
       toast.success(`${quantity} ${mealTime === 'morning' ? 'Morning' : 'Dinner'} tiffin(s)${chapatiText} booked!`);
@@ -243,10 +247,25 @@ export default function CustomerDashboard() {
                       style={{ padding: '4px 14px', borderRadius: '6px', border: '2px solid var(--primary-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', cursor: 'pointer', fontSize: '1.2rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
                   </div>
 
+                  {/* Note for Kitchen Owner */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--text-secondary)' }}>
+                      📝 Note for Kitchen Owner (Optional):
+                    </label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="e.g. Less spicy, extra curry, deliver early..."
+                      value={noteMorning}
+                      onChange={(e) => setNoteMorning(e.target.value)}
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', fontSize: '0.95rem' }}
+                    />
+                  </div>
+
                   <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
                     <Button 
                       size="lg" 
-                      onClick={() => handleBookClick('morning', 'full', quantityMorning, extraChapatiMorning)} 
+                      onClick={() => handleBookClick('morning', 'full', quantityMorning, extraChapatiMorning, noteMorning)} 
                       loading={booking} 
                       style={{ 
                         flex: 1, 
@@ -266,7 +285,7 @@ export default function CustomerDashboard() {
                     <Button 
                       size="lg" 
                       variant="outline" 
-                      onClick={() => handleBookClick('morning', 'half', quantityMorning, extraChapatiMorning)} 
+                      onClick={() => handleBookClick('morning', 'half', quantityMorning, extraChapatiMorning, noteMorning)} 
                       loading={booking} 
                       style={{ 
                         flex: 1, 
@@ -365,10 +384,25 @@ export default function CustomerDashboard() {
                       style={{ padding: '4px 14px', borderRadius: '6px', border: '2px solid var(--primary-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', cursor: 'pointer', fontSize: '1.2rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
                   </div>
 
+                  {/* Note for Kitchen Owner */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--text-secondary)' }}>
+                      📝 Note for Kitchen Owner (Optional):
+                    </label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="e.g. Less spicy, extra curry, deliver early..."
+                      value={noteDinner}
+                      onChange={(e) => setNoteDinner(e.target.value)}
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', fontSize: '0.95rem' }}
+                    />
+                  </div>
+
                   <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
                     <Button 
                       size="lg" 
-                      onClick={() => handleBookClick('dinner', 'full', quantityDinner, extraChapatiDinner)} 
+                      onClick={() => handleBookClick('dinner', 'full', quantityDinner, extraChapatiDinner, noteDinner)} 
                       loading={booking} 
                       style={{ 
                         flex: 1, 
@@ -388,7 +422,7 @@ export default function CustomerDashboard() {
                     <Button 
                       size="lg" 
                       variant="outline" 
-                      onClick={() => handleBookClick('dinner', 'half', quantityDinner, extraChapatiDinner)} 
+                      onClick={() => handleBookClick('dinner', 'half', quantityDinner, extraChapatiDinner, noteDinner)} 
                       loading={booking} 
                       style={{ 
                         flex: 1, 
@@ -579,6 +613,15 @@ export default function CustomerDashboard() {
                 </strong>
               </div>
 
+              {confirmModal.note && confirmModal.note.trim() && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.95rem' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Kitchen Note:</span>
+                  <strong style={{ color: '#F97316', textAlign: 'right', maxWidth: '60%', wordBreak: 'break-word' }}>
+                    📝 {confirmModal.note.trim()}
+                  </strong>
+                </div>
+              )}
+
               <div style={{
                 borderTop: '1px dashed var(--border-medium)',
                 paddingTop: '10px',
@@ -622,7 +665,7 @@ export default function CustomerDashboard() {
                 Cancel
               </Button>
               <Button 
-                onClick={() => executeBooking(confirmModal.mealTime, confirmModal.mealType, confirmModal.quantity, confirmModal.extraChapati)}
+                onClick={() => executeBooking(confirmModal.mealTime, confirmModal.mealType, confirmModal.quantity, confirmModal.extraChapati, confirmModal.note)}
                 loading={booking}
                 style={{ 
                   flex: 1.4, 

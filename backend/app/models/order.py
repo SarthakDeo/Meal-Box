@@ -17,6 +17,7 @@ class Order(db.Model):
     extra_chapati = db.Column(db.Integer, default=0)
     quantity = db.Column(db.Integer, default=1, nullable=False)
     delivery_location = db.Column(db.String(255), nullable=True)
+    note = db.Column(db.String(255), nullable=True)
     amount = db.Column(db.Numeric(10, 2), nullable=False)
     status = db.Column(db.String(20), default='booked', nullable=False, index=True)  # booked, delivered, cancelled
     source = db.Column(db.String(10), default='manual', nullable=False)  # auto, manual
@@ -53,6 +54,7 @@ class Order(db.Model):
             'quantity': qty,
             'extra_chapati': self.extra_chapati or 0,
             'delivery_location': self.delivery_location,
+            'note': self.note,
             'amount': float(self.amount),
             'status': self.status,
             'source': self.source,

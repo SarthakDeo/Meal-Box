@@ -120,6 +120,7 @@ def create_order():
     extra_chapati = int(data.get('extra_chapati', 0))
     quantity = max(1, int(data.get('quantity', 1)))
     delivery_location = data.get('delivery_location', '').strip() if data.get('delivery_location') else None
+    note = data.get('note', '').strip() if data.get('note') else None
     amount = get_meal_price(meal_type, extra_chapati, quantity)
 
     order = Order(
@@ -130,6 +131,7 @@ def create_order():
         extra_chapati=extra_chapati,
         quantity=quantity,
         delivery_location=delivery_location,
+        note=note,
         amount=amount,
         source='manual',
         status='booked'
@@ -167,6 +169,9 @@ def update_order(order_id):
 
     if data.get('delivery_location') is not None:
         order.delivery_location = data['delivery_location'].strip()
+
+    if data.get('note') is not None:
+        order.note = data['note'].strip()
 
     db.session.commit()
     return jsonify({"message": "Order updated", "order": order.to_dict()}), 200
