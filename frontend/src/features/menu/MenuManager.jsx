@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../../services/api';
 import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
+import TiffinLoader from '../../components/ui/TiffinLoader';
 import toast from 'react-hot-toast';
 import '../dashboard/Dashboard.css';
 
@@ -89,7 +90,7 @@ export default function MenuManager() {
       </div>
 
       {loading ? (
-        <div className="skeleton" style={{ height: 200, borderRadius: 16 }} />
+        <TiffinLoader text="Loading daily menus..." />
       ) : menus.length === 0 ? (
         <div className="empty-state">
           <div className="empty-state__icon">🍽️</div>

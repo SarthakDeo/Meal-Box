@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
+import TiffinLoader from '../../components/ui/TiffinLoader';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
@@ -57,7 +58,7 @@ export default function AnalyticsDashboard() {
       </div>
 
       {loading ? (
-        <div className="skeleton" style={{ height: 500, borderRadius: 16 }} />
+        <TiffinLoader text="Loading business analytics & trends..." />
       ) : (
         <>
           {/* Revenue Chart */}

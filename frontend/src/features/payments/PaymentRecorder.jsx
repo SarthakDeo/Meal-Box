@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../../services/api';
 import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
+import TiffinLoader from '../../components/ui/TiffinLoader';
 import toast from 'react-hot-toast';
 import '../dashboard/Dashboard.css';
 
@@ -81,7 +82,7 @@ export default function PaymentRecorder() {
       )}
 
       {loading ? (
-        <div className="skeleton" style={{ height: 300, borderRadius: 16 }} />
+        <TiffinLoader text="Loading payment records..." />
       ) : (
         <div className="data-table-wrap">
           <table className="data-table">

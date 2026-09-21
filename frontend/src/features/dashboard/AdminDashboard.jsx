@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { StatCard } from '../../components/ui/Card';
+import TiffinLoader from '../../components/ui/TiffinLoader';
 import {
   HiOutlineCurrencyRupee, HiOutlineShoppingCart,
   HiOutlineUsers, HiOutlineCalendar
@@ -43,11 +44,7 @@ export default function AdminDashboard() {
         <div className="dashboard__header">
           <h1 className="page-title">Dalavi's Kitchen Dashboard</h1>
         </div>
-        <div className="stats-grid">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="skeleton" style={{ height: 100, borderRadius: 16 }} />
-          ))}
-        </div>
+        <TiffinLoader text="Loading kitchen analytics & summary..." />
       </div>
     );
   }

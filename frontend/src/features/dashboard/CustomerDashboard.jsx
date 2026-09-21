@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 import Button from '../../components/ui/Button';
+import TiffinLoader from '../../components/ui/TiffinLoader';
 import toast from 'react-hot-toast';
 import './Dashboard.css';
 import './CustomerDashboard.css';
@@ -199,7 +200,7 @@ export default function CustomerDashboard() {
       </div>
 
       {loading ? (
-        <div className="skeleton" style={{ height: 200, borderRadius: 16 }} />
+        <TiffinLoader text="Loading today's tiffin menu..." />
       ) : (
         <div className="menu-cards stagger-children">
           {/* Morning Menu */}

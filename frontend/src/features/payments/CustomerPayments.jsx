@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
+import TiffinLoader from '../../components/ui/TiffinLoader';
 import '../dashboard/Dashboard.css';
 
 export default function CustomerPayments() {
@@ -47,7 +48,7 @@ export default function CustomerPayments() {
       )}
 
       {loading ? (
-        <div className="skeleton" style={{ height: 200, borderRadius: 16 }} />
+        <TiffinLoader text="Loading payment summary & history..." />
       ) : payments.length === 0 ? (
         <div className="empty-state">
           <div className="empty-state__icon">💳</div>

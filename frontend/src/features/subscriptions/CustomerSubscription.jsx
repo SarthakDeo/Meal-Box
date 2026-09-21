@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
+import TiffinLoader from '../../components/ui/TiffinLoader';
 import '../dashboard/Dashboard.css';
 
 export default function CustomerSubscription() {
@@ -19,7 +20,7 @@ export default function CustomerSubscription() {
       <p className="page-subtitle">Your mess subscription details</p>
 
       {loading ? (
-        <div className="skeleton" style={{ height: 200, borderRadius: 16 }} />
+        <TiffinLoader text="Loading subscription details..." />
       ) : subs.length === 0 ? (
         <div className="empty-state">
           <div className="empty-state__icon">📅</div>

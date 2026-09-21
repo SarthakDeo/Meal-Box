@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
 import Button from '../../components/ui/Button';
+import TiffinLoader from '../../components/ui/TiffinLoader';
 import toast from 'react-hot-toast';
 import '../dashboard/Dashboard.css';
 
@@ -42,7 +43,7 @@ export default function CustomerOrders() {
       <p className="page-subtitle">Your order history and active bookings</p>
 
       {loading ? (
-        <div className="skeleton" style={{ height: 200, borderRadius: 16 }} />
+        <TiffinLoader text="Fetching your tiffin orders..." />
       ) : orders.length === 0 ? (
         <div className="empty-state">
           <div className="empty-state__icon">📋</div>
