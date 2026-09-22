@@ -7,6 +7,8 @@ import toast from 'react-hot-toast';
 import './Dashboard.css';
 import './CustomerDashboard.css';
 
+import { getLocalDateString } from '../../utils/dateUtils';
+
 export default function CustomerDashboard() {
   const { user } = useAuthStore();
   const [menu, setMenu] = useState([]);
@@ -27,14 +29,23 @@ export default function CustomerDashboard() {
 
   useEffect(() => {
     loadDashboardData();
-  }, []);
 
-  const getLocalDateString = (d = new Date()) => {
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
+    const onFocus = () => loadDashboardData();
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onFocus);
+
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        loadDashboardData();
+      }
+    }, 10000);
+
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onFocus);
+      clearInterval(interval);
+    };
+  }, []);
 
   const loadDashboardData = async () => {
     try {

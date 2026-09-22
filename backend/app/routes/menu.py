@@ -22,7 +22,7 @@ def get_today_menu():
         "date": today.isoformat(),
         "menus": [m.to_dict() for m in menus]
     })
-    response.headers['Cache-Control'] = 'private, max-age=60'
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     return response, 200
 
 
