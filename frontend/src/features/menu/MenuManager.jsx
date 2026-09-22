@@ -6,9 +6,11 @@ import TiffinLoader from '../../components/ui/TiffinLoader';
 import toast from 'react-hot-toast';
 import '../dashboard/Dashboard.css';
 
+import { getLocalDateString } from '../../utils/dateUtils';
+
 export default function MenuManager() {
   const [menus, setMenus] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(getLocalDateString());
   const [showModal, setShowModal] = useState(false);
   const [editData, setEditData] = useState({ meal_time: 'morning', items: '', is_published: true });
   const [loading, setLoading] = useState(true);

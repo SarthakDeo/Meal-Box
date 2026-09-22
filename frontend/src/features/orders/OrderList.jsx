@@ -5,9 +5,11 @@ import TiffinLoader from '../../components/ui/TiffinLoader';
 import toast from 'react-hot-toast';
 import '../dashboard/Dashboard.css';
 
+import { getLocalDateString } from '../../utils/dateUtils';
+
 export default function OrderList() {
   const [orders, setOrders] = useState([]);
-  const [filters, setFilters] = useState({ date: new Date().toISOString().split('T')[0], status: '', meal_time: '' });
+  const [filters, setFilters] = useState({ date: getLocalDateString(), status: '', meal_time: '' });
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
 

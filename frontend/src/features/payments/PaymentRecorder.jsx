@@ -6,6 +6,8 @@ import TiffinLoader from '../../components/ui/TiffinLoader';
 import toast from 'react-hot-toast';
 import '../dashboard/Dashboard.css';
 
+import { getLocalDateString } from '../../utils/dateUtils';
+
 export default function PaymentRecorder() {
   const [payments, setPayments] = useState([]);
   const [customers, setCustomers] = useState([]);
@@ -13,7 +15,7 @@ export default function PaymentRecorder() {
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
-    user_id: '', amount: '', payment_date: new Date().toISOString().split('T')[0], payment_method: 'cash', notes: ''
+    user_id: '', amount: '', payment_date: getLocalDateString(), payment_method: 'cash', notes: ''
   });
 
   useEffect(() => { loadData(); }, []);
@@ -40,7 +42,7 @@ export default function PaymentRecorder() {
       await api.post('/payments', form);
       toast.success('Payment recorded');
       setShowModal(false);
-      setForm({ user_id: '', amount: '', payment_date: new Date().toISOString().split('T')[0], payment_method: 'cash', notes: '' });
+      setForm({ user_id: '', amount: '', payment_date: getLocalDateString(), payment_method: 'cash', notes: '' });
       loadData();
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed');
