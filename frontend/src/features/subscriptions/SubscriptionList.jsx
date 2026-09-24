@@ -224,8 +224,10 @@ export default function SubscriptionList() {
                   <th>Period</th>
                   <th>Meal</th>
                   <th>Time</th>
-                  <th>Price/Day</th>
+                  <th>Rate / Day</th>
                   <th>Days Left</th>
+                  <th>Leaves</th>
+                  <th>Net Total</th>
                   <th>Status</th>
                   <th>Payment</th>
                   <th>Actions</th>
@@ -235,11 +237,44 @@ export default function SubscriptionList() {
                 {subs.map(s => (
                   <tr key={s.id}>
                     <td><strong>{s.user_name}</strong></td>
-                    <td>{s.start_date} → {s.end_date}</td>
+                    <td>
+                      <div>{s.start_date} → {s.end_date}</div>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>({s.total_calendar_days || 0} days)</div>
+                    </td>
                     <td><span className={`badge badge--${s.meal_type}`}>{s.meal_type}</span></td>
-                    <td>{s.meal_time}</td>
-                    <td>₹{s.price_per_day}</td>
-                    <td>{s.days_remaining}</td>
+                    <td style={{ textTransform: 'capitalize' }}>{s.meal_time}</td>
+                    <td>
+                      <div><strong>₹{s.price_per_day}</strong></div>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>₹{s.price_per_meal}/meal</div>
+                    </td>
+                    <td>
+                      <strong style={{ color: 'var(--primary-color)', fontSize: '0.98rem' }}>
+                        {s.effective_days_remaining || s.days_remaining} Days
+                      </strong>
+                      {s.leave_count > 0 && (
+                        <div style={{ fontSize: '0.75rem', color: 'var(--success-600)', fontWeight: 'bold' }}>
+                          +{s.leave_count} leave credited
+                        </div>
+                      )}
+                    </td>
+                    <td>
+                      {s.leave_count > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          <span className="badge badge--warning" style={{ fontWeight: 'bold' }}>
+                            🚪 {s.leave_count} Leave(s)
+                          </span>
+                          <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
+                            {s.leave_dates?.slice(0, 2).join(', ')}{s.leave_dates?.length > 2 ? '...' : ''}
+                          </span>
+                        </div>
+                      ) : (
+                        <span style={{ color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>—</span>
+                      )}
+                    </td>
+                    <td>
+                      <strong style={{ color: 'var(--text-primary)' }}>₹{s.total_amount}</strong>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>({s.net_active_days} active days)</div>
+                    </td>
                     <td><span className={`badge badge--${s.status}`}>{s.status}</span></td>
                     <td>
                       {s.is_paid ? (
@@ -398,7 +433,7 @@ export default function SubscriptionList() {
               🚪 Customer Leave / Not Taken Tiffins (Optional)
             </label>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
-              Add dates where customer took leave or did not receive tiffins. These will be automatically marked as <strong>Cancelled (₹0 cost)</strong>.
+              Add dates where customer took leave or did not receive tiffins. These days will be credited back into <strong>Days Left</strong> and excluded from total payment.
             </p>
             <div style={{ display: 'flex', gap: '8px' }}>
               <input
@@ -455,6 +490,48 @@ export default function SubscriptionList() {
               </div>
             )}
           </div>
+
+          {/* Live Subscription Calculation Summary */}
+          {(() => {
+            if (!form.start_date || !form.end_date) return null;
+            const startD = new Date(form.start_date);
+            const endD = new Date(form.end_date);
+            const calDays = Math.max(1, Math.round((endD - startD) / (1000 * 3600 * 24)) + 1);
+            const leaveCount = form.leave_dates.length;
+            const netActiveDays = Math.max(0, calDays - leaveCount);
+            const pricePerDay = parseFloat(form.price_per_day) || 0;
+            const pricePerMeal = form.meal_time === 'both' ? pricePerDay / 2 : pricePerDay;
+            const netAmount = netActiveDays * pricePerDay;
+
+            return (
+              <div style={{
+                background: 'var(--bg-card)',
+                padding: '14px 16px',
+                borderRadius: '12px',
+                border: '1px solid var(--border-light)',
+                fontSize: '0.88rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px'
+              }}>
+                <div style={{ fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>📊</span> Live Payment & Days Calculation Summary
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', color: 'var(--text-secondary)' }}>
+                  <div>Daily Rate: <strong style={{ color: 'var(--text-primary)' }}>₹{pricePerDay} / day</strong></div>
+                  <div>Per Meal Rate: <strong style={{ color: 'var(--text-primary)' }}>₹{pricePerMeal} / meal</strong></div>
+                  <div>Calendar Days: <strong style={{ color: 'var(--text-primary)' }}>{calDays} days</strong></div>
+                  <div>Selected Leaves: <strong style={{ color: 'var(--error-500)' }}>{leaveCount} days</strong></div>
+                  <div>Effective Days Left: <strong style={{ color: 'var(--primary-color)' }}>{calDays + leaveCount} days</strong></div>
+                  <div>Active Days Paid: <strong style={{ color: 'var(--success-600)' }}>{netActiveDays} days</strong></div>
+                </div>
+                <div style={{ marginTop: '6px', paddingTop: '6px', borderTop: '1px dashed var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>Net Subscription Total:</span>
+                  <strong style={{ fontSize: '1.1rem', color: 'var(--primary-color)' }}>₹{netAmount.toFixed(2)}</strong>
+                </div>
+              </div>
+            );
+          })()}
 
           <Button onClick={handleCreateSubscription} fullWidth size="lg">Create Subscription</Button>
         </div>

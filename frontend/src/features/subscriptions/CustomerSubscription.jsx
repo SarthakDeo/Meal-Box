@@ -233,19 +233,92 @@ export default function CustomerSubscription() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {subs.map(s => (
                 <div key={s.id} className="delivery-card" style={{ borderTop: `3px solid ${s.status === 'active' ? 'var(--success-500)' : 'var(--warning-500)'}` }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Mess Subscription</h3>
-                    <span className={`badge badge--${s.status}`}>{s.status}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span>🍱</span> Mess Subscription #{s.id}
+                    </h3>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <span className={`badge badge--${s.status}`}>{s.status.toUpperCase()}</span>
+                      <span className={`badge badge--${s.is_paid ? 'success' : 'warning'}`}>
+                        {s.is_paid ? 'PAID' : 'UNPAID'}
+                      </span>
+                    </div>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, fontSize: '0.9rem' }}>
-                    <div><span style={{ color: 'var(--text-secondary)' }}>Start:</span> <strong>{s.start_date}</strong></div>
-                    <div><span style={{ color: 'var(--text-secondary)' }}>End:</span> <strong>{s.end_date}</strong></div>
-                    <div><span style={{ color: 'var(--text-secondary)' }}>Meal:</span> <strong className={`badge badge--${s.meal_type}`}>{s.meal_type}</strong></div>
-                    <div><span style={{ color: 'var(--text-secondary)' }}>Time:</span> <strong>{s.meal_time}</strong></div>
-                    <div><span style={{ color: 'var(--text-secondary)' }}>Price/Day:</span> <strong>₹{s.price_per_day}</strong></div>
-                    <div><span style={{ color: 'var(--text-secondary)' }}>Days Left:</span> <strong>{s.days_remaining}</strong></div>
-                    <div><span style={{ color: 'var(--text-secondary)' }}>Payment:</span> <strong className={`badge badge--${s.is_paid ? 'success' : 'warning'}`}>{s.is_paid ? 'PAID' : 'UNPAID'}</strong></div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14, fontSize: '0.9rem' }}>
+                    <div>
+                      <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.8rem' }}>Validity Period</span>
+                      <strong>📅 {s.start_date}</strong> to <strong>{s.end_date}</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.8rem' }}>Meal Options</span>
+                      <strong style={{ textTransform: 'capitalize' }}>{s.meal_type} Meal</strong> ({s.meal_time})
+                    </div>
+                    <div>
+                      <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.8rem' }}>Daily & Meal Rate</span>
+                      <strong>₹{s.price_per_day} / day</strong> <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>(₹{s.price_per_meal}/meal)</span>
+                    </div>
+                    <div>
+                      <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.8rem' }}>Days Left</span>
+                      <strong style={{ fontSize: '1.05rem', color: 'var(--primary-color)' }}>
+                        {s.effective_days_remaining || s.days_remaining} Days
+                      </strong>
+                      {s.leave_count > 0 && (
+                        <div style={{ fontSize: '0.78rem', color: 'var(--success-600)', fontWeight: 'bold' }}>
+                          ({s.days_remaining} calendar + {s.leave_count} leave days added)
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.8rem' }}>Active Tiffin Days</span>
+                      <strong>{s.net_active_days} Days</strong> <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>(out of {s.total_calendar_days})</span>
+                    </div>
+                    <div>
+                      <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.8rem' }}>Net Total Amount</span>
+                      <strong style={{ fontSize: '1.05rem', color: 'var(--text-primary)' }}>₹{s.total_amount}</strong>
+                    </div>
                   </div>
+
+                  {/* Leave / Not Taken Tiffin Section */}
+                  {s.leave_details && s.leave_details.length > 0 && (
+                    <div style={{
+                      marginTop: 16,
+                      padding: '14px 16px',
+                      borderRadius: '12px',
+                      background: 'rgba(249, 115, 22, 0.06)',
+                      border: '1px dashed var(--primary-color)'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                        <strong style={{ fontSize: '0.9rem', color: 'var(--primary-color)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                          🚪 Leaves & Not Taken Tiffins ({s.leave_details.length})
+                        </strong>
+                        <span style={{ fontSize: '0.78rem', background: 'rgba(34, 197, 94, 0.15)', color: 'var(--success-600)', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>
+                          +{s.leave_count} Days Credited Back
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                        {s.leave_details.map((l, idx) => (
+                          <div key={idx} style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            padding: '4px 10px',
+                            borderRadius: '16px',
+                            background: 'var(--bg-card)',
+                            border: '1px solid var(--border-light)',
+                            fontSize: '0.82rem',
+                            fontWeight: '600',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                          }}>
+                            <span>📅</span>
+                            <span>{l.date}</span>
+                            <span style={{ opacity: 0.7, fontSize: '0.75rem' }}>({l.meal_time})</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {s.status === 'paused' && s.pause_reason && (
                     <p style={{ marginTop: 12, fontSize: '0.85rem', color: 'var(--warning-600)', fontStyle: 'italic' }}>
                       Pause reason: {s.pause_reason}
