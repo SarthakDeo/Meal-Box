@@ -5,6 +5,7 @@ from datetime import date
 from app.extensions import db
 from app.models.subscription import Subscription
 from app.models.order import Order
+from app.models.holiday import Holiday
 from app.utils.helpers import get_meal_price
 
 
@@ -17,6 +18,15 @@ def generate_daily_orders(target_date=None):
         target_date = date.today()
 
     active_subs = Subscription.query.filter_by(status='active').all()
+    holidays = Holiday.query.filter_by(date=target_date).all()
+    holiday_meal_times = set()
+    for h in holidays:
+        if h.meal_time == 'both':
+            holiday_meal_times.add('morning')
+            holiday_meal_times.add('dinner')
+        else:
+            holiday_meal_times.add(h.meal_time)
+
     created_count = 0
 
     for sub in active_subs:
@@ -30,12 +40,16 @@ def generate_daily_orders(target_date=None):
             meal_times.append('dinner')
 
         for meal_time in meal_times:
-            # Check if order already exists
+            # Skip if target_date is a holiday for this meal_time
+            if meal_time in holiday_meal_times:
+                continue
+
+            # Check if order already exists (including cancelled/pre-recorded leave orders)
             existing = Order.query.filter_by(
                 user_id=sub.user_id,
                 order_date=target_date,
                 meal_time=meal_time
-            ).filter(Order.status != 'cancelled').first()
+            ).first()
 
             if not existing:
                 amount = get_meal_price(sub.meal_type)
@@ -56,3 +70,4 @@ def generate_daily_orders(target_date=None):
 
     db.session.commit()
     return created_count
+

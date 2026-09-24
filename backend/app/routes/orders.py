@@ -117,6 +117,15 @@ def create_order():
             except ValueError:
                 return jsonify({"error": "Invalid date format"}), 400
 
+    # Check if target date is a Holiday
+    from app.models.holiday import Holiday
+    holiday = Holiday.query.filter_by(date=order_date).first()
+    if holiday and (holiday.meal_time == 'both' or holiday.meal_time == meal_time):
+        return jsonify({
+            "error": f"Kitchen is closed on {order_date} ({holiday.title})."
+        }), 400
+
+
     extra_chapati = int(data.get('extra_chapati', 0))
     quantity = max(1, int(data.get('quantity', 1)))
     delivery_location = data.get('delivery_location', '').strip() if data.get('delivery_location') else None
@@ -139,6 +148,12 @@ def create_order():
 
     db.session.add(order)
     db.session.commit()
+
+    try:
+        from app.services.notification_service import notify_admin_new_order
+        notify_admin_new_order(order)
+    except Exception:
+        pass
 
     return jsonify({"message": "Order placed", "order": order.to_dict()}), 201
 
@@ -174,6 +189,14 @@ def update_order(order_id):
         order.note = data['note'].strip()
 
     db.session.commit()
+
+    if data.get('status') in ('delivered', 'cancelled'):
+        try:
+            from app.services.notification_service import notify_order_status
+            notify_order_status(order.user_id, order.id, order.meal_time, order.status)
+        except Exception:
+            pass
+
     return jsonify({"message": "Order updated", "order": order.to_dict()}), 200
 
 
@@ -193,6 +216,13 @@ def cancel_order(order_id):
 
     order.status = 'cancelled'
     db.session.commit()
+
+    try:
+        from app.services.notification_service import notify_order_status
+        notify_order_status(order.user_id, order.id, order.meal_time, 'cancelled')
+    except Exception:
+        pass
+
     return jsonify({"message": "Order cancelled"}), 200
 
 

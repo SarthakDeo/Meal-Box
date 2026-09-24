@@ -8,6 +8,8 @@ from app.extensions import db
 from app.models.subscription import Subscription
 from app.models.user import User
 from app.models.payment import Payment
+from app.models.order import Order
+from app.models.holiday import Holiday
 from app.utils.decorators import admin_required, get_current_user
 
 subscriptions_bp = Blueprint('subscriptions', __name__)
@@ -44,7 +46,7 @@ def my_subscriptions():
 @subscriptions_bp.route('', methods=['POST'])
 @admin_required
 def create_subscription():
-    """Create a new subscription (admin)"""
+    """Create a new subscription with optional pre-recorded leave dates (admin)"""
     data = request.get_json()
 
     required = ['user_id', 'start_date', 'end_date', 'price_per_day']
@@ -93,6 +95,46 @@ def create_subscription():
     db.session.add(sub)
     db.session.flush()
 
+    # Pre-record leave dates if provided (e.g. for retroactively created subscriptions)
+    leave_dates = data.get('leave_dates', [])
+    recorded_leaves_count = 0
+
+    if isinstance(leave_dates, list):
+        for ld_str in leave_dates:
+            try:
+                ld = datetime.strptime(ld_str.strip(), '%Y-%m-%d').date()
+            except ValueError:
+                continue
+
+            if start <= ld <= end:
+                meal_times_to_cancel = ['morning', 'dinner'] if meal_time == 'both' else [meal_time]
+                for mt in meal_times_to_cancel:
+                    existing = Order.query.filter_by(
+                        user_id=sub.user_id,
+                        order_date=ld,
+                        meal_time=mt
+                    ).first()
+                    if existing:
+                        existing.status = 'cancelled'
+                        existing.amount = 0.0
+                        existing.note = 'Customer Leave (Pre-recorded)'
+                    else:
+                        leave_order = Order(
+                            user_id=sub.user_id,
+                            subscription_id=sub.id,
+                            order_date=ld,
+                            meal_time=mt,
+                            meal_type=meal_type,
+                            quantity=1,
+                            extra_chapati=0,
+                            amount=0.0,
+                            source='manual',
+                            status='cancelled',
+                            note='Customer Leave (Pre-recorded)'
+                        )
+                        db.session.add(leave_order)
+                    recorded_leaves_count += 1
+
     if is_paid:
         admin_id = get_jwt_identity()
         payment = Payment(
@@ -107,9 +149,17 @@ def create_subscription():
 
     db.session.commit()
 
+    try:
+        from app.services.notification_service import notify_subscription_event
+        leave_msg = f" with {recorded_leaves_count} pre-recorded leave meals" if recorded_leaves_count > 0 else ""
+        notify_subscription_event(sub.user_id, 'created', f"Valid from {sub.start_date.strftime('%b %d')} to {sub.end_date.strftime('%b %d')}{leave_msg}.")
+    except Exception:
+        pass
+
     return jsonify({
         "message": "Subscription created",
-        "subscription": sub.to_dict()
+        "subscription": sub.to_dict(),
+        "recorded_leaves": recorded_leaves_count
     }), 201
 
 
@@ -136,6 +186,14 @@ def update_subscription(sub_id):
         sub.status = data['status']
 
     db.session.commit()
+
+    if data.get('status'):
+        try:
+            from app.services.notification_service import notify_subscription_event
+            notify_subscription_event(sub.user_id, data['status'])
+        except Exception:
+            pass
+
     return jsonify({
         "message": "Subscription updated",
         "subscription": sub.to_dict()
@@ -156,6 +214,12 @@ def pause_subscription(sub_id):
     sub.pause_reason = request.get_json().get('reason', '') if request.get_json() else ''
 
     db.session.commit()
+
+    try:
+        from app.services.notification_service import notify_subscription_event
+        notify_subscription_event(sub.user_id, 'paused')
+    except Exception:
+        pass
     return jsonify({
         "message": "Subscription paused",
         "subscription": sub.to_dict()
@@ -208,3 +272,80 @@ def mark_subscription_paid(sub_id):
         "message": "Subscription marked as paid",
         "subscription": sub.to_dict()
     }), 200
+
+
+# ==========================================
+# HOLIDAYS API (Kitchen Holidays)
+# ==========================================
+
+@subscriptions_bp.route('/holidays', methods=['GET'])
+@jwt_required()
+def list_holidays():
+    """List all kitchen holidays"""
+    holidays = Holiday.query.order_by(Holiday.date.desc()).all()
+    return jsonify({
+        "holidays": [h.to_dict() for h in holidays]
+    }), 200
+
+
+@subscriptions_bp.route('/holidays', methods=['POST'])
+@admin_required
+def add_holiday():
+    """Add a kitchen holiday (admin)"""
+    data = request.get_json() or {}
+    date_str = data.get('date')
+    title = data.get('title', '').strip()
+    description = data.get('description', '').strip()
+    meal_time = data.get('meal_time', 'both')
+
+    if not date_str or not title:
+        return jsonify({"error": "Date and Title are required"}), 400
+
+    try:
+        h_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+    except ValueError:
+        return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
+
+    if meal_time not in ('morning', 'dinner', 'both'):
+        return jsonify({"error": "meal_time must be 'morning', 'dinner', or 'both'"}), 400
+
+    # Check if holiday already exists for that date
+    existing = Holiday.query.filter_by(date=h_date).first()
+    if existing:
+        return jsonify({"error": f"A holiday on {date_str} already exists ({existing.title})"}), 400
+
+    holiday = Holiday(
+        date=h_date,
+        title=title,
+        description=description,
+        meal_time=meal_time
+    )
+    db.session.add(holiday)
+
+    # Automatically cancel existing non-cancelled orders on this date for affected meal times
+    orders_on_date = Order.query.filter_by(order_date=h_date).filter(Order.status != 'cancelled').all()
+    cancelled_count = 0
+    for ord in orders_on_date:
+        if meal_time == 'both' or ord.meal_time == meal_time:
+            ord.status = 'cancelled'
+            ord.note = f"Kitchen Holiday: {title}"
+            ord.amount = 0.0
+            cancelled_count += 1
+
+    db.session.commit()
+
+    return jsonify({
+        "message": f"Holiday added for {h_date}. {cancelled_count} active order(s) cancelled.",
+        "holiday": holiday.to_dict()
+    }), 201
+
+
+@subscriptions_bp.route('/holidays/<int:holiday_id>', methods=['DELETE'])
+@admin_required
+def delete_holiday(holiday_id):
+    """Delete a kitchen holiday (admin)"""
+    holiday = db.get_or_404(Holiday, holiday_id)
+    db.session.delete(holiday)
+    db.session.commit()
+    return jsonify({"message": "Holiday deleted successfully"}), 200
+

@@ -27,6 +27,8 @@ export default function CustomerDashboard() {
   const [cancelingMeal, setCancelingMeal] = useState(null);
   const [confirmCancelModal, setConfirmCancelModal] = useState(null);
 
+  const [holidays, setHolidays] = useState([]);
+
   useEffect(() => {
     loadDashboardData();
 
@@ -49,12 +51,14 @@ export default function CustomerDashboard() {
 
   const loadDashboardData = async () => {
     try {
-      const [menuRes, historyRes, subRes] = await Promise.all([
+      const [menuRes, historyRes, subRes, holRes] = await Promise.all([
         api.get('/menu/today'),
         api.get('/orders/history?per_page=50'),
-        api.get('/subscriptions/me').catch(() => ({ data: { subscriptions: [] } }))
+        api.get('/subscriptions/me').catch(() => ({ data: { subscriptions: [] } })),
+        api.get('/subscriptions/holidays').catch(() => ({ data: { holidays: [] } }))
       ]);
       setMenu(menuRes.data.menus || []);
+      setHolidays(holRes.data.holidays || []);
       
       const allOrders = historyRes.data.orders || [];
       const localTodayStr = getLocalDateString();
@@ -83,6 +87,7 @@ export default function CustomerDashboard() {
       setLoading(false);
     }
   };
+
 
   const handleCancelTodayMeal = async (mealTime) => {
     setCancelingMeal(mealTime);
@@ -210,7 +215,39 @@ export default function CustomerDashboard() {
         />
       </div>
 
+      {/* Holiday Alert Banner */}
+      {(() => {
+        const todayStr = getLocalDateString();
+        const todayHoliday = holidays.find(h => h.date === todayStr);
+        if (!todayHoliday) return null;
+        return (
+          <div className="animate-fade-in-up" style={{
+            padding: '16px 20px',
+            borderRadius: '16px',
+            backgroundColor: 'rgba(234, 179, 8, 0.15)',
+            border: '2px solid #EAB308',
+            color: '#92400E',
+            fontWeight: 'bold',
+            fontSize: '1rem',
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '14px',
+            boxShadow: '0 4px 12px rgba(234, 179, 8, 0.15)'
+          }}>
+            <span style={{ fontSize: '1.8rem' }}>🏝️</span>
+            <div>
+              <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>Kitchen Holiday Today: {todayHoliday.title}</div>
+              <div style={{ fontSize: '0.9rem', color: '#B45309', marginTop: '2px' }}>
+                {todayHoliday.description || `Kitchen is closed for ${todayHoliday.meal_time === 'both' ? 'all meals' : todayHoliday.meal_time} today.`}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {loading ? (
+
         <TiffinLoader text="Loading today's tiffin menu..." />
       ) : (
         <div className="menu-cards stagger-children">
