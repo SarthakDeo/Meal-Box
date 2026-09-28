@@ -14,19 +14,31 @@ class Config:
 
     # Database
     basedir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
-    SQLALCHEMY_DATABASE_URI = os.getenv(
+    _db_url = os.getenv(
         'DATABASE_URL',
         'sqlite:///' + os.path.join(basedir, 'mealbox.db')
     )
-    # Fix for Render/Heroku postgres:// vs postgresql://
-    if SQLALCHEMY_DATABASE_URI and SQLALCHEMY_DATABASE_URI.startswith('postgres://'):
-        SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace('postgres://', 'postgresql://', 1)
+    # Normalize all PostgreSQL URL schemes to use psycopg2 driver
+    if _db_url.startswith('postgres://'):
+        _db_url = _db_url.replace('postgres://', 'postgresql+psycopg2://', 1)
+    elif _db_url.startswith('postgresql://'):
+        _db_url = _db_url.replace('postgresql://', 'postgresql+psycopg2://', 1)
+    elif _db_url.startswith('postgresql+psycopg://'):
+        _db_url = _db_url.replace('postgresql+psycopg://', 'postgresql+psycopg2://', 1)
+
+    # psycopg2 does not support channel_binding parameter — strip it from URL
+    if 'channel_binding=' in _db_url:
+        import re
+        _db_url = re.sub(r'[&?]channel_binding=[^&]*', '', _db_url)
+
+    SQLALCHEMY_DATABASE_URI = _db_url
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_size': 5,
         'pool_recycle': 300,
         'pool_pre_ping': True,
+        'connect_args': {'sslmode': 'require'},
     }
 
     # JWT
