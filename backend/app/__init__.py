@@ -50,7 +50,6 @@ def create_app(config_class=AppConfig):
     from app.routes.customers import customers_bp
     from app.routes.payments import payments_bp
     from app.routes.analytics import analytics_bp
-    from app.routes.notifications import notifications_bp
 
     flask_app.register_blueprint(auth_bp, url_prefix='/api/auth')
     flask_app.register_blueprint(menu_bp, url_prefix='/api/menu')
@@ -59,7 +58,6 @@ def create_app(config_class=AppConfig):
     flask_app.register_blueprint(customers_bp, url_prefix='/api/customers')
     flask_app.register_blueprint(payments_bp, url_prefix='/api/payments')
     flask_app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
-    flask_app.register_blueprint(notifications_bp, url_prefix='/api/notifications')
 
     # Health Check endpoints for keep-alive pings (Cron-Job / UptimeRobot / Render)
     @flask_app.route('/', methods=['GET'])
