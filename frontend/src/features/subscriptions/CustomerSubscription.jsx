@@ -231,53 +231,117 @@ export default function CustomerSubscription() {
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {subs.map(s => (
-                <div key={s.id} className="delivery-card" style={{ borderTop: `3px solid ${s.status === 'active' ? 'var(--success-500)' : 'var(--warning-500)'}` }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span>🍱</span> Mess Subscription #{s.id}
-                    </h3>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <span className={`badge badge--${s.status}`}>{s.status.toUpperCase()}</span>
-                      <span className={`badge badge--${s.is_paid ? 'success' : 'warning'}`}>
-                        {s.is_paid ? 'PAID' : 'UNPAID'}
-                      </span>
-                    </div>
-                  </div>
+              {subs.map(s => {
+                const dayRate = s.price_per_day || 0;
+                const mealRate = s.price_per_meal || (s.meal_time === 'both' ? dayRate / 2 : dayRate);
+                const calDays = s.total_calendar_days || 0;
+                const leaves = s.leave_count || 0;
+                const effDaysLeft = s.effective_days_remaining ?? s.days_remaining ?? 0;
+                const activeDays = s.net_active_days ?? Math.max(0, calDays - leaves);
+                const netTotal = s.total_amount || 0;
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14, fontSize: '0.9rem' }}>
-                    <div>
-                      <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.8rem' }}>Validity Period</span>
-                      <strong>📅 {s.start_date}</strong> to <strong>{s.end_date}</strong>
+                return (
+                  <div key={s.id} className="delivery-card" style={{ borderTop: `3px solid ${s.status === 'active' ? 'var(--success-500)' : 'var(--warning-500)'}` }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
+                      <h3 style={{ fontSize: '1.15rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span>🍱</span> Mess Subscription #{s.id}
+                      </h3>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <span className={`badge badge--${s.status}`}>{s.status?.toUpperCase()}</span>
+                        <span className={`badge badge--${s.is_paid ? 'success' : 'warning'}`}>
+                          {s.is_paid ? 'PAID' : 'UNPAID'}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.8rem' }}>Meal Options</span>
-                      <strong style={{ textTransform: 'capitalize' }}>{s.meal_type} Meal</strong> ({s.meal_time})
+
+                    {/* Basic Info Bar */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                      gap: 12,
+                      fontSize: '0.9rem',
+                      paddingBottom: 14,
+                      borderBottom: '1px solid var(--border-light)'
+                    }}>
+                      <div>
+                        <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.8rem' }}>Validity Period</span>
+                        <strong>📅 {s.start_date}</strong> to <strong>{s.end_date}</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.8rem' }}>Meal Options</span>
+                        <strong style={{ textTransform: 'capitalize' }}>{s.meal_type} Meal ({s.meal_time})</strong>
+                      </div>
                     </div>
-                    <div>
-                      <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.8rem' }}>Daily & Meal Rate</span>
-                      <strong>₹{s.price_per_day} / day</strong> <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>(₹{s.price_per_meal}/meal)</span>
-                    </div>
-                    <div>
-                      <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.8rem' }}>Days Left</span>
-                      <strong style={{ fontSize: '1.05rem', color: 'var(--primary-color)' }}>
-                        {s.effective_days_remaining || s.days_remaining} Days
-                      </strong>
-                      {s.leave_count > 0 && (
-                        <div style={{ fontSize: '0.78rem', color: 'var(--success-600)', fontWeight: 'bold' }}>
-                          ({s.days_remaining} calendar + {s.leave_count} leave days added)
+
+                    {/* Summary Box matching Image 2 */}
+                    <div style={{
+                      background: 'var(--bg-card)',
+                      padding: '16px 20px',
+                      borderRadius: '16px',
+                      border: '1px solid var(--border-light)',
+                      marginTop: '14px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
+                    }}>
+                      <div style={{
+                        fontWeight: 700,
+                        fontSize: '1rem',
+                        color: 'var(--text-primary)',
+                        marginBottom: '14px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}>
+                        <span>📊</span> Payment & Days Calculation Summary
+                      </div>
+
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                        gap: '12px 24px',
+                        fontSize: '0.92rem',
+                        color: 'var(--text-secondary)'
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span>Daily Rate:</span>
+                          <strong style={{ color: 'var(--text-primary)' }}>₹{dayRate} / day</strong>
                         </div>
-                      )}
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span>Per Meal Rate:</span>
+                          <strong style={{ color: 'var(--text-primary)' }}>₹{mealRate} / meal</strong>
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span>Calendar Days:</span>
+                          <strong style={{ color: 'var(--text-primary)' }}>{calDays} days</strong>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span>Selected Leaves:</span>
+                          <strong style={{ color: 'var(--error-500)' }}>{leaves} days</strong>
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span>Effective Days Left:</span>
+                          <strong style={{ color: 'var(--primary-color)', fontSize: '1rem' }}>{effDaysLeft} days</strong>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span>Active Days Paid:</span>
+                          <strong style={{ color: 'var(--success-600)', fontSize: '1rem' }}>{activeDays} days</strong>
+                        </div>
+                      </div>
+
+                      <div style={{
+                        marginTop: '14px',
+                        paddingTop: '12px',
+                        borderTop: '1px dashed var(--border-light)',
+                        display: 'flex',
+                        justify: 'space-between',
+                        alignItems: 'center',
+                        fontSize: '1rem'
+                      }}>
+                        <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Net Subscription Total:</span>
+                        <strong style={{ fontSize: '1.25rem', color: 'var(--primary-color)' }}>₹{Number(netTotal).toFixed(2)}</strong>
+                      </div>
                     </div>
-                    <div>
-                      <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.8rem' }}>Active Tiffin Days</span>
-                      <strong>{s.net_active_days} Days</strong> <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>(out of {s.total_calendar_days})</span>
-                    </div>
-                    <div>
-                      <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.8rem' }}>Net Total Amount</span>
-                      <strong style={{ fontSize: '1.05rem', color: 'var(--text-primary)' }}>₹{s.total_amount}</strong>
-                    </div>
-                  </div>
 
                   {/* Leave / Not Taken Tiffin Section */}
                   {s.leave_details && s.leave_details.length > 0 && (
@@ -325,7 +389,8 @@ export default function CustomerSubscription() {
                     </p>
                   )}
                 </div>
-              ))}
+              );
+            })}
             </div>
           )}
 
