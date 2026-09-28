@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import api from '../../services/api';
 import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
@@ -14,6 +14,8 @@ export default function SubscriptionList() {
   const [showModal, setShowModal] = useState(false);
   const [showHolidayModal, setShowHolidayModal] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const [expandedSubId, setExpandedSubId] = useState(null);
 
   // Subscription form state
   const [form, setForm] = useState({
@@ -234,70 +236,165 @@ export default function SubscriptionList() {
                 </tr>
               </thead>
               <tbody>
-                {subs.map(s => (
-                  <tr key={s.id}>
-                    <td><strong>{s.user_name}</strong></td>
-                    <td>
-                      <div>{s.start_date} → {s.end_date}</div>
-                      <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>({s.total_calendar_days || 0} days)</div>
-                    </td>
-                    <td><span className={`badge badge--${s.meal_type}`}>{s.meal_type}</span></td>
-                    <td style={{ textTransform: 'capitalize' }}>{s.meal_time}</td>
-                    <td>
-                      <div><strong>₹{s.price_per_day}</strong></div>
-                      <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>₹{s.price_per_meal}/meal</div>
-                    </td>
-                    <td>
-                      <strong style={{ color: 'var(--primary-color)', fontSize: '0.98rem' }}>
-                        {s.effective_days_remaining || s.days_remaining} Days
-                      </strong>
-                      {s.leave_count > 0 && (
-                        <div style={{ fontSize: '0.75rem', color: 'var(--success-600)', fontWeight: 'bold' }}>
-                          +{s.leave_count} leave credited
-                        </div>
+                {subs.map(s => {
+                  const dayRate = s.price_per_day || 0;
+                  const mealRate = s.price_per_meal || (s.meal_time === 'both' ? dayRate / 2 : dayRate);
+                  const calDays = s.total_calendar_days || 0;
+                  const leaves = s.leave_count || 0;
+                  const effDaysLeft = s.effective_days_remaining ?? s.days_remaining ?? 0;
+                  const activeDays = s.net_active_days ?? Math.max(0, calDays - leaves);
+                  const netTotal = s.total_amount || 0;
+
+                  return (
+                    <Fragment key={s.id}>
+                      <tr>
+                        <td><strong>{s.user_name}</strong></td>
+                        <td>
+                          <div>{s.start_date} → {s.end_date}</div>
+                          <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>({calDays} days)</div>
+                        </td>
+                        <td><span className={`badge badge--${s.meal_type}`}>{s.meal_type}</span></td>
+                        <td style={{ textTransform: 'capitalize' }}>{s.meal_time}</td>
+                        <td>
+                          <div><strong>₹{dayRate}</strong></div>
+                          <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>₹{mealRate}/meal</div>
+                        </td>
+                        <td>
+                          <strong style={{ color: 'var(--primary-color)', fontSize: '0.98rem' }}>
+                            {effDaysLeft} Days
+                          </strong>
+                          {leaves > 0 && (
+                            <div style={{ fontSize: '0.75rem', color: 'var(--success-600)', fontWeight: 'bold' }}>
+                              +{leaves} leave credited
+                            </div>
+                          )}
+                        </td>
+                        <td>
+                          {leaves > 0 ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                              <span className="badge badge--warning" style={{ fontWeight: 'bold' }}>
+                                🚪 {leaves} Leave(s)
+                              </span>
+                              <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
+                                {s.leave_dates?.slice(0, 2).join(', ')}{s.leave_dates?.length > 2 ? '...' : ''}
+                              </span>
+                            </div>
+                          ) : (
+                            <span style={{ color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>—</span>
+                          )}
+                        </td>
+                        <td>
+                          <strong style={{ color: 'var(--text-primary)' }}>₹{netTotal}</strong>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>({activeDays} active days)</div>
+                        </td>
+                        <td><span className={`badge badge--${s.status}`}>{s.status}</span></td>
+                        <td>
+                          {s.is_paid ? (
+                            <span className="badge badge--success">Paid</span>
+                          ) : (
+                            <span className="badge badge--warning">Unpaid</span>
+                          )}
+                        </td>
+                        <td>
+                          <div className="action-btns">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setExpandedSubId(expandedSubId === s.id ? null : s.id)}
+                              style={{ borderColor: 'var(--primary-color)', color: 'var(--primary-color)' }}
+                            >
+                              📊 {expandedSubId === s.id ? 'Hide' : 'Summary'}
+                            </Button>
+                            {s.status === 'active' && (
+                              <Button size="sm" variant="ghost" onClick={() => handlePause(s.id)}>⏸ Pause</Button>
+                            )}
+                            {s.status === 'paused' && (
+                              <Button size="sm" variant="ghost" onClick={() => handleResume(s.id)}>▶ Resume</Button>
+                            )}
+                            {!s.is_paid && (
+                              <Button size="sm" variant="ghost" onClick={() => handleMarkPaid(s.id)}>💰 Mark Paid</Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+
+                      {/* Expandable Summary Box matching Image 2 */}
+                      {expandedSubId === s.id && (
+                        <tr>
+                          <td colSpan={11} style={{ padding: '8px 16px 20px 16px', background: 'rgba(249, 115, 22, 0.03)' }}>
+                            <div style={{
+                              background: 'var(--bg-card)',
+                              padding: '16px 20px',
+                              borderRadius: '16px',
+                              border: '1px solid var(--border-light)',
+                              boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+                            }}>
+                              <div style={{
+                                fontWeight: 700,
+                                fontSize: '1rem',
+                                color: 'var(--text-primary)',
+                                marginBottom: '14px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px'
+                              }}>
+                                <span>📊</span> Live Payment & Days Calculation Summary — {s.user_name}
+                              </div>
+
+                              <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                                gap: '12px 24px',
+                                fontSize: '0.92rem',
+                                color: 'var(--text-secondary)'
+                              }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                  <span>Daily Rate:</span>
+                                  <strong style={{ color: 'var(--text-primary)' }}>₹{dayRate} / day</strong>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                  <span>Per Meal Rate:</span>
+                                  <strong style={{ color: 'var(--text-primary)' }}>₹{mealRate} / meal</strong>
+                                </div>
+
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                  <span>Calendar Days:</span>
+                                  <strong style={{ color: 'var(--text-primary)' }}>{calDays} days</strong>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                  <span>Selected Leaves:</span>
+                                  <strong style={{ color: 'var(--error-500)' }}>{leaves} days</strong>
+                                </div>
+
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                  <span>Effective Days Left:</span>
+                                  <strong style={{ color: 'var(--primary-color)', fontSize: '1rem' }}>{effDaysLeft} days</strong>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                  <span>Active Days Paid:</span>
+                                  <strong style={{ color: 'var(--success-600)', fontSize: '1rem' }}>{activeDays} days</strong>
+                                </div>
+                              </div>
+
+                              <div style={{
+                                marginTop: '14px',
+                                paddingTop: '12px',
+                                borderTop: '1px dashed var(--border-light)',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                fontSize: '1rem'
+                              }}>
+                                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Net Subscription Total:</span>
+                                <strong style={{ fontSize: '1.25rem', color: 'var(--primary-color)' }}>₹{Number(netTotal).toFixed(2)}</strong>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
                       )}
-                    </td>
-                    <td>
-                      {s.leave_count > 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                          <span className="badge badge--warning" style={{ fontWeight: 'bold' }}>
-                            🚪 {s.leave_count} Leave(s)
-                          </span>
-                          <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
-                            {s.leave_dates?.slice(0, 2).join(', ')}{s.leave_dates?.length > 2 ? '...' : ''}
-                          </span>
-                        </div>
-                      ) : (
-                        <span style={{ color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>—</span>
-                      )}
-                    </td>
-                    <td>
-                      <strong style={{ color: 'var(--text-primary)' }}>₹{s.total_amount}</strong>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>({s.net_active_days} active days)</div>
-                    </td>
-                    <td><span className={`badge badge--${s.status}`}>{s.status}</span></td>
-                    <td>
-                      {s.is_paid ? (
-                        <span className="badge badge--success">Paid</span>
-                      ) : (
-                        <span className="badge badge--warning">Unpaid</span>
-                      )}
-                    </td>
-                    <td>
-                      <div className="action-btns">
-                        {s.status === 'active' && (
-                          <Button size="sm" variant="ghost" onClick={() => handlePause(s.id)}>⏸ Pause</Button>
-                        )}
-                        {s.status === 'paused' && (
-                          <Button size="sm" variant="ghost" onClick={() => handleResume(s.id)}>▶ Resume</Button>
-                        )}
-                        {!s.is_paid && (
-                          <Button size="sm" variant="ghost" onClick={() => handleMarkPaid(s.id)}>💰 Mark Paid</Button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                    </Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>
