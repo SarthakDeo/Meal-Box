@@ -4,6 +4,7 @@ from app.models.order import Order
 from app.models.menu import DailyMenu
 from app.models.payment import Payment
 from app.models.holiday import Holiday
+from app.models.fcm_token import FcmToken
 
-__all__ = ['User', 'Subscription', 'Order', 'DailyMenu', 'Payment', 'Holiday']
+__all__ = ['User', 'Subscription', 'Order', 'DailyMenu', 'Payment', 'Holiday', 'FcmToken']
 

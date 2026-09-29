@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { StatCard } from '../../components/ui/Card';
 import TiffinLoader from '../../components/ui/TiffinLoader';
+import BroadcastPanel from '../../components/ui/BroadcastPanel';
 import {
   HiOutlineCurrencyRupee, HiOutlineShoppingCart,
   HiOutlineUsers, HiOutlineCalendar
@@ -138,6 +139,9 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Push Notification Broadcast */}
+      <BroadcastPanel />
 
       {/* Charts Row */}
       <div className="charts-grid">
