@@ -1,6 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { useEffect } from 'react';
 import { useAuthStore } from './store/authStore';
+import { setupForegroundHandler } from './services/notifications';
+import NotificationBanner from './components/ui/NotificationBanner';
 import LoginPage from './features/auth/LoginPage';
 import RegisterPage from './features/auth/RegisterPage';
 import AdminLayout from './components/layout/AdminLayout';
@@ -22,6 +25,14 @@ import './App.css';
 function App() {
   const { user } = useAuthStore();
 
+  // Wire up foreground push handler whenever a user is logged in
+  useEffect(() => {
+    if (!user) return;
+    let unsubscribe;
+    setupForegroundHandler().then((fn) => { unsubscribe = fn; });
+    return () => { if (unsubscribe) unsubscribe(); };
+  }, [user]);
+
   return (
     <BrowserRouter>
       <Toaster
@@ -38,6 +49,9 @@ function App() {
           },
         }}
       />
+
+      {/* Notification opt-in banner — shown only to logged-in users */}
+      {user && <NotificationBanner />}
 
       <Routes>
         {/* Public Routes */}

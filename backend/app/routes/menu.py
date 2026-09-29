@@ -8,6 +8,8 @@ from app.extensions import db
 from app.models.menu import DailyMenu
 from app.utils.decorators import admin_required
 from app.utils.helpers import get_ist_today
+from app.routes.push import _multicast
+from app.models.fcm_token import FcmToken
 
 menu_bp = Blueprint('menu', __name__)
 
@@ -89,6 +91,20 @@ def create_menu():
         msg = "Menu created"
 
     db.session.commit()
+
+    # Notify all users when a new menu is published (skip silent/unpublished menus)
+    if msg == "Menu created" and menu.is_published:
+        meal_label = "🌅 Morning" if menu.meal_time == "morning" else "🌙 Dinner"
+        friendly_date = menu_date.strftime("%d %b")
+        tokens = [row.token for row in FcmToken.query.with_entities(FcmToken.token).all()]
+        if tokens:
+            _multicast(
+                tokens,
+                title=f"{meal_label} Menu is Live! 🍱",
+                body=f"Today's {menu.meal_time} menu for {friendly_date} has been posted. Tap to view.",
+                url="/customer/dashboard",
+            )
+
     return jsonify({"message": msg, "menu": menu.to_dict()}), 201
 
 

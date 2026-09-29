@@ -34,11 +34,15 @@ class Config:
     SQLALCHEMY_DATABASE_URI = _db_url
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    # Only pass sslmode when connecting to a real PostgreSQL server (Neon on Render).
+    # SQLite (local dev fallback) does not accept connect_args at all.
+    _is_postgres = _db_url.startswith('postgresql')
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_size': 5,
         'pool_recycle': 300,
         'pool_pre_ping': True,
-        'connect_args': {'sslmode': 'require'},
+        **({'connect_args': {'sslmode': 'require'}} if _is_postgres else {}),
     }
 
     # JWT
